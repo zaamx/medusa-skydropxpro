@@ -422,7 +422,7 @@ class SkydropxProService extends MedusaService({
                 headers: { 'Authorization': 'Bearer ' + token }
             })
 
-            const MAX_ATTEMPTS = 5;
+            const MAX_ATTEMPTS = 10;
             const INITIAL_DELAY = 1000; // 1 second
             let attempts = 0;
             let shipment = response.data;
@@ -445,7 +445,182 @@ class SkydropxProService extends MedusaService({
                 shipment: null
             }
         }
-    }   
+    } 
+    // /api/v1/shipments
+    /**
+     * Get shipments by order id
+     * page query
+        Type:
+        integer
+     */
+    async getShipments(page: number) {
+        const token = await this.authenticate()
+        try {
+            const response = await axios.get(this.options_.apiUrl + "/shipments?page=" + page, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            })
+            return {
+                success: true,
+                shipments: response.data
+            }
+
+        } catch (error) {
+            this.logger_.error(JSON.stringify(error.response.data))
+            // throw error
+            return {
+                success: false,
+                shipments: []
+            }
+        }
+    }
+    /**
+     *    GET /api/v1/pickups/coverage?shipment_id={shipment_id}
+     */
+    async getPickupsCoverage(shipment_id: string) {
+        const token = await this.authenticate()
+        try {
+            const response = await axios.get(this.options_.apiUrl + "/pickups/coverage?shipment_id=" + shipment_id, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            })
+            return response.data
+        } catch (error) {
+            this.logger_.error(JSON.stringify(error.response.data))
+            // throw error
+        }
+    }
+    
+    /**
+     * Resumen: Reprograma una recolección
+
+        Descripción:
+        POST /api/v1/pickups/{id}/reschedule
+        Este endpoint permite reprogramar una recolección
+
+        Parámetros de la solicitud:
+
+        reference_shipment_id: Id del envio a recolectar
+        packages: Número de paquetes a recolectar
+        total_weight: Peso total de los paquetes a recolectar
+        scheduled_from: Fecha y hora de inicio de franja horaria de recolección
+        scheduled_to: Fecha y hora final de franja horaria de recolección
+        {
+            "pickup": {
+                "reference_shipment_id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+                "packages": 5,
+                "total_weight": 11,
+                "scheduled_from": "2024-09-24 09:00:00",
+                "scheduled_to": "2024-09-24 14:00:00"
+            }
+            }
+
+     */
+    async reschedulePickup(id: string, data: any) {
+        const token = await this.authenticate()
+        try {
+            const requestData = {
+                pickup: data
+            }
+            const response = await axios.post(this.options_.apiUrl + "/pickups/" + id + "/reschedule", requestData, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            })  
+            return response.data
+        } catch (error) {
+            this.logger_.error(JSON.stringify(error.response.data))
+            // throw error
+        }
+    }
+
+    /**
+     * Resumen: Recupera todas las recolecciones
+
+        Descripción:
+        GET /api/v1/pickups?page={page}
+        Este endpoint recupera todas las recolecciones, paginadas de diez en diez.
+
+        Parámetros:
+        page query
+        Nro de página
+
+        Type:
+        integer
+     */
+    async getPickups(page: number) {
+        const token = await this.authenticate()
+        try {
+            const response = await axios.get(this.options_.apiUrl + "/pickups?page=" + page, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            })
+            return response.data
+        } catch (error) {
+            this.logger_.error(JSON.stringify(error.response.data))
+            // throw error
+        }
+    }
+
+    /**
+     * Resumen: Detalle de Recolección
+        Descripción:
+        GET /api/v1/pickups/{id}
+        Este endpoint recupera una recolección
+
+        Parámetros:
+        id path
+        Required
+        ID de la recolección
+
+        Type:
+        string
+     */
+    async getPickup(id: string) {
+        const token = await this.authenticate()
+        try {
+            const response = await axios.get(this.options_.apiUrl + "/pickups/" + id, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            })
+            return response.data
+        } catch (error) {
+            this.logger_.error(JSON.stringify(error.response.data))
+            // throw error
+        }
+    }
+    /**
+     * Resumen: Programa una recolección
+
+        Descripción:
+        POST /api/v1/pickups/
+        Este endpoint permite programar una recolección
+
+        Parámetros de la solicitud:
+
+        reference_shipment_id: Id del envio a recolectar
+        packages: Número de paquetes a recolectar
+        total_weight: Peso total de los paquetes a recolectar
+        scheduled_from: Fecha y hora de inicio de franja horaria de recolección
+        scheduled_to: Fecha y hora final de franja horaria de recolección
+        {
+            "pickup": {
+                "reference_shipment_id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+                "packages": 5,
+                "total_weight": 11,
+                "scheduled_from": "2024-09-24 09:00:00",
+                "scheduled_to": "2024-09-24 14:00:00"
+            }
+        }
+     */
+    async createPickup(data: any) {
+        const token = await this.authenticate()
+        try {
+            const response = await axios.post(this.options_.apiUrl + "/pickups", data, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            })
+            return response.data
+        } catch (error) {
+            this.logger_.error(JSON.stringify(error.response.data))
+            // throw error
+        }
+    }
+    
+    
 }
 
 export default SkydropxProService
