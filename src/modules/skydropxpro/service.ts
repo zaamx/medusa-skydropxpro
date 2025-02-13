@@ -613,10 +613,23 @@ class SkydropxProService extends MedusaService({
             const response = await axios.post(this.options_.apiUrl + "/pickups", data, {
                 headers: { 'Authorization': 'Bearer ' + token }
             })
-            return response.data
+
+            const MAX_ATTEMPTS = 10;
+            const INITIAL_DELAY = 1000; // 1 second
+            let attempts = 0;
+            let pickup = response.data;
+
+            while (pickup?.data?.attributes?.status !== 'scheduled' && attempts < MAX_ATTEMPTS) {
+                await new Promise(resolve => setTimeout(resolve, INITIAL_DELAY * Math.pow(2, attempts)));
+                const updatedPickup = await this.getPickup(pickup.data.id);
+                pickup = updatedPickup;
+                attempts++;
+            }
+
+            return pickup;
         } catch (error) {
             this.logger_.error(JSON.stringify(error.response.data))
-            // throw error
+            return null;
         }
     }
     
