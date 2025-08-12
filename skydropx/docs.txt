@@ -1,0 +1,7120 @@
+Bienvenido a nuestra documentación de integraciones!
+Podrás automatizar envíos y procesos, sincronizar las órdenes de tiendas online; programar recolecciones, configurar impresión, rastrear los movimientos de tus envíos y protegerlos.
+
+Credenciales
+Guía rápida: crea un envío
+Guía rápida: crea un envío internacional
+Guía rápida: crea un envío con múltiples paquetes
+Busca las credenciales y conecta con nuestra API
+Simplifica tu integración, elige el ambiente y empieza a usar nuestra API en minutos…
+
+Sandbox
+ Producción
+1. Encuentra tus credenciales
+Ve a Conexiones > API y copia tus credenciales (Client ID y Client Secret).
+2. Genera tu bearer token
+Utiliza las credenciales y genera el bearer token para autenticar tus solicitudes
+3. Empieza a llamar a la API
+Con tu token listo podrás hacer solicitudes a la API.
+
+¿Comenzamos cotizando un envío?
+El token expira en 2 horas y permite hasta 2 solicitudes por segundo. Planifica las peticiones dentro de este tiempo.
+
+¿Necesitas ayuda con tu integración? Escríbenos a
+
+api@skydropx.com
+Oauth
+/api/v1/oauth/token
+POST
+Resumen: Obtener un token de acceso
+
+Descripción:
+   POST /api/v1/oauth/token
+El endpoint de token se utiliza para que el cliente obtenga un token de acceso presentando su concesión de autorización o token de actualización.
+
+Parámetros de la solicitud:
+
+grant_type: El tipo de concesión utilizada, como refresh_token o client_credentials.
+client_id: El identificador del cliente.
+client_secret: La clave secreta del cliente.
+refresh_token: El token de actualización (para el tipo de concesión refresh_token).
+redirect_uri: La URI de redirección, debe ser la misma que la redirect_uri almacenada en la aplicación Cliente.
+scope:Los scopes limitan el acceso de los tokens de acceso a partes específicas de la API. Al solicitar un token de acceso, puedes especificar uno o más scopes.
+Ejemplo de solicitud:
+
+   POST /api/v1/oauth/token
+   Content-Type: application/x-www-form-urlencoded
+grant_type=client_credentials&client_id=CLIENT_ID&client_secret=CLIENT_SECRET
+Ejemplo de Cuerpo de Solicitud:
+Content-Type: application/json
+Object:
+client_idRequired
+Type: string
+client_secretRequired
+Type: string
+grant_typeRequired
+Type: string
+redirect_uri
+Type: string
+refresh_token
+Type: string
+scope
+Type: string
+Curl
+Ruby
+Node
+Php
+Python
+curl -X POST 'https://pro.skydropx.com/api/v1/oauth/token' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer {{BEARER_TOKEN}}' 
+        
+Probar
+Respuestas:
+Código: 200
+Descripción:
+Obtener un token de acceso
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "access_token": {
+      "type": "string"
+    },
+    "token_type": {
+      "type": "string"
+    },
+    "expires_in": {
+      "type": "integer"
+    },
+    "scope": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "integer"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "access_token": {
+    },
+    "token_type": {
+    },
+    "expires_in": {
+    },
+    "scope": {
+    },
+    "created_at": {
+    }
+  }
+}
+Código: 400
+Descripción:
+Credenciales faltantes
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "error": {
+      "type": "string"
+    },
+    "error_description": {
+      "type": "string"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "error": {
+    },
+    "error_description": {
+    }
+  }
+}
+Código: 401
+Descripción:
+Credenciales inválidas
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "error": {
+      "type": "string"
+    },
+    "error_description": {
+      "type": "string"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "error": {
+    },
+    "error_description": {
+    }
+  }
+}
+/api/v1/oauth/revoke
+POST
+Resumen: Revocar un token
+
+Descripción:
+   POST /api/v1/oauth/revoke
+El endpoint de revocación permite a los clientes notificar al servidor de autorización que un token de actualización o acceso previamente obtenido ya no es necesario.
+
+Parámetros de la solicitud:
+
+client_id: El identificador del cliente.
+client_secret: La clave secreta del cliente.
+token: El token que el cliente desea revocar.
+token_type_hint: Una pista sobre el tipo de token enviado para revocación, por ejemplo, access_token o refresh_token.
+Ejemplo de solicitud:
+
+   POST /api/v1/oauth/revoke
+   Content-Type: application/x-www-form-urlencoded
+
+client_id=CLIENT_ID&client_secret=CLIENT_SECRET&token=TOKEN&token_type_hint=access_token
+Ejemplo de Cuerpo de Solicitud:
+Content-Type: application/json
+Object:
+client_idRequired
+Type: string
+client_secretRequired
+Type: string
+tokenRequired
+Type: string
+token_type_hint
+Type: string
+Curl
+Ruby
+Node
+Php
+Python
+curl -X POST 'https://pro.skydropx.com/api/v1/oauth/revoke' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer {{BEARER_TOKEN}}' 
+        
+Probar
+Respuestas:
+Código: 200
+Descripción:
+Revocar un token
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+  }
+}
+Ejemplo:
+{
+  "properties": {
+  }
+}
+Código: 403
+Descripción:
+Cliente no autorizado
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "error": {
+      "type": "string"
+    },
+    "error_description": {
+      "type": "string"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "error": {
+    },
+    "error_description": {
+    }
+  }
+}
+/api/v1/oauth/introspect
+POST
+Resumen: Obtener detalles del token
+
+Descripción:
+   POST /api/v1/oauth/introspect
+El endpoint de introspección se utiliza para verificar el estado activo de un token de acceso o de actualización.
+
+Parámetros de la solicitud:
+
+client_id: El identificador del cliente.
+client_secret: La clave secreta del cliente.
+token: El token del cual el cliente desea obtener detalles.
+token_type_hint: Una pista sobre el tipo de token enviado para introspección, por ejemplo, access_token o refresh_token.
+Ejemplo de solicitud:
+
+   POST /api/v1/oauth/introspect
+   Content-Type: application/x-www-form-urlencoded
+
+client_id=CLIENT_ID&client_secret=CLIENT_SECRET&token=TOKEN&token_type_hint=access_token
+Ejemplo de Cuerpo de Solicitud:
+Content-Type: application/json
+Object:
+client_idRequired
+Type: string
+client_secretRequired
+Type: string
+tokenRequired
+Type: string
+token_type_hint
+Type: string
+Curl
+Ruby
+Node
+Php
+Python
+curl -X POST 'https://pro.skydropx.com/api/v1/oauth/introspect' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer {{BEARER_TOKEN}}' 
+        
+Probar
+Respuestas:
+Código: 200
+Descripción:
+Obtener detalles del token
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "active": {
+      "type": "boolean"
+    },
+    "scope": {
+      "type": "string"
+    },
+    "client_id": {
+      "type": "string"
+    },
+    "token_type": {
+      "type": "string"
+    },
+    "exp": {
+      "type": "integer"
+    },
+    "iat": {
+      "type": "integer"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "active": {
+    },
+    "scope": {
+    },
+    "client_id": {
+    },
+    "token_type": {
+    },
+    "exp": {
+    },
+    "iat": {
+    }
+  }
+}
+Código: 400
+Descripción:
+Credenciales faltantes
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "error": {
+      "type": "string"
+    },
+    "error_description": {
+      "type": "string"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "error": {
+    },
+    "error_description": {
+    }
+  }
+}
+Código: 401
+Descripción:
+Credenciales inválidas
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "error": {
+      "type": "string"
+    },
+    "error_description": {
+      "type": "string"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "error": {
+    },
+    "error_description": {
+    }
+  }
+}
+Ordenes
+/api/v1/orders
+GET
+Resumen: Recupera todas las órdenes
+
+Descripción:
+   GET /api/v1/orders
+El endpoint de órdenes sirve para recuperar todas las órdenes realizadas. Funciona como un historial.
+
+Parámetros de la solicitud:
+
+Está sección no tiene parámetros.
+
+Curl
+Ruby
+Node
+Php
+Python
+curl -X GET 'https://pro.skydropx.com/api/v1/orders' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer {{BEARER_TOKEN}}' 
+        
+Probar
+Respuestas:
+Código: 200
+Descripción:
+Retorna una colección de pedidos
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "platform": {
+                "type": "string",
+                "nullable": true
+              },
+              "ecommerce_id": {
+                "type": "string",
+                "nullable": true
+              },
+              "price": {
+                "type": "string",
+                "nullable": true
+              },
+              "created_at": {
+                "type": "string"
+              },
+              "updated_at": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "data": {
+      "items": {
+        "properties": {
+          "id": "The order uuid, example: 0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+          "type": "order",
+          "attributes": {
+            "properties": {
+              "id": "The order uuid, example: 0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+              "platform": "Wix",
+              "ecommerce_id": "12342",
+              "price": "44532",
+              "created_at": {
+              },
+              "updated_at": {
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+/api/v1/orders/{id}
+GET
+Resumen: Recupera una orden
+
+Descripción:
+   GET /api/v1/orders/:id
+El endpoint para recuperar una orden sirve para obtener toda la información de una orden.
+
+Parámetros:
+id path
+Required
+Type:
+string
+Curl
+Ruby
+Node
+Php
+Python
+curl -X GET 'https://pro.skydropx.com/api/v1/orders/example_id' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer {{BEARER_TOKEN}}' 
+        
+Probar
+Respuestas:
+Código: 200
+Descripción:
+Retorna una orden
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "platform": {
+              "type": [
+                "string",
+                null
+              ]
+            },
+            "ecommerce_id": {
+              "type": [
+                "string",
+                null
+              ]
+            },
+            "price": {
+              "type": [
+                "string",
+                null
+              ]
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "address_from": {
+              "type": "object",
+              "nullable": true,
+              "properties": {
+                "area_level1": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "area_level2": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "area_level3": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "name": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "postal_code": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "country_code": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "street1": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "company": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "phone": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "email": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "reference": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "address_type": {
+                  "type": "string"
+                },
+                "apartment_number": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                }
+              }
+            },
+            "address_to": {
+              "type": "object",
+              "nullable": true,
+              "properties": {
+                "area_level1": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "area_level2": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "area_level3": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "name": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "postal_code": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "country_code": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "street1": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "company": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "phone": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "email": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "reference": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "address_type": {
+                  "type": "string"
+                },
+                "apartment_number": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                }
+              }
+            },
+            "parcel": {
+              "type": "object",
+              "properties": {
+                "weight": {
+                  "type": "float"
+                },
+                "length": {
+                  "type": "integer"
+                },
+                "width": {
+                  "type": "integer"
+                },
+                "height": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        },
+        "relationships": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "shipments": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "included": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "sku": {
+                "type": "string",
+                "nullable": true
+              },
+              "quantity": {
+                "type": "integer"
+              },
+              "price": {
+                "type": "number"
+              },
+              "weight": {
+                "type": "number"
+              },
+              "height": {
+                "type": "number"
+              },
+              "width": {
+                "type": "number"
+              },
+              "length": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      },
+      "nullable": true
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "data": {
+      "properties": {
+        "id": "9e270243-762f-40c8-833e-ef1c4ee8282d",
+        "type": "order",
+        "attributes": {
+          "properties": {
+            "id": "9e270243-762f-40c8-833e-ef1c4ee8282d",
+            "platform": "Shopify",
+            "ecommerce_id": "SDFG",
+            "price": "10.0",
+            "created_at": "2025-01-07T14:46:38.203-06:00",
+            "address_from": {
+              "properties": {
+                "area_level1": "Nuevo León",
+                "area_level2": "Monterrey",
+                "area_level3": "La Finca",
+                "name": "Name",
+                "postal_code": "64000",
+                "country_code": "MX",
+                "street1": "Olivo 4618",
+                "company": "",
+                "phone": "1242452456",
+                "email": "email@example.com",
+                "reference": "Green house",
+                "address_type": "from",
+                "apartment_number": ""
+              }
+            },
+            "address_to": {
+              "properties": {
+                "area_level1": "Monterrey Centro",
+                "area_level2": "Monterrey",
+                "area_level3": "La finca",
+                "name": "Mayra Doe",
+                "postal_code": "64000",
+                "country_code": "MX",
+                "street1": "22 Main St",
+                "company": "ACS Inc.",
+                "phone": "1234567890",
+                "email": "jhon@doe.com",
+                "reference": "Near the park",
+                "address_type": "to",
+                "apartment_number": "123"
+              }
+            },
+            "parcel": {
+              "properties": {
+                "weight": 2.0,
+                "length": 10,
+                "width": 10,
+                "height": 10
+              }
+            }
+          }
+        },
+        "relationships": {
+          "properties": {
+            "items": {
+              "properties": {
+                "data": {
+                  "items": {
+                    "properties": {
+                      "id": "c2092234-1b85-41a2-a200-858d052c0ad1",
+                      "type": "item"
+                    }
+                  }
+                }
+              }
+            },
+            "shipments": {
+              "properties": {
+                "data": {
+                  "items": {
+                    "properties": {
+                      "id": "9eae25ba-11b4-4b9f-9b01-3d09da8bc12d",
+                      "type": "shipment"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "included": {
+      "items": {
+        "properties": {
+          "id": "c2092234-1b85-41a2-a200-858d052c0ad1",
+          "type": "item",
+          "attributes": {
+            "properties": {
+              "name": "prueba",
+              "sku": "prueba",
+              "quantity": 2,
+              "price": 15.0,
+              "weight": 20.0,
+              "height": 30.0,
+              "width": 30.0,
+              "length": 30.0
+            }
+          }
+        }
+      }
+    }
+  }
+}
+/api/v1/orders/
+POST
+Resumen: Crea una órden
+
+Descripción:
+   POST /api/v1/orders
+El endpoint permite crear una órden en específico. Se necesita enviar al menos uno de todos los atributos, para crear una orden.
+
+Ejemplo de Cuerpo de Solicitud:
+Content-Type: application/json
+Object:
+orderRequired
+Object:
+reference
+Type: string
+A través de este campo se podrá identificar la órden en la plataforma.
+Example
+reference_number
+Type: string
+Identificador externo de la orden en la plataforma. Puede ser nulo. Si esta presente, debe ser único.
+Example
+payment_status
+Type: string
+Estado de pago.
+Example
+total_price
+Type: string
+Precio total de la orden.
+Example
+merchant_store_id
+Type: string
+Id de la tienda
+Example
+headquarter_id
+Type: string
+Id del headquarter
+Example
+platform
+Type: string
+Plataforma desde donde se realizará la orden
+Example
+package_type
+Type: string
+Tipo de paquete
+Example
+parcels
+Array of:
+Object:
+weight
+Type: float
+Peso del paquete.
+Example
+length
+Type: integer
+Longitud del paquete.
+Example
+width
+Type: integer
+Ancho del paquete.
+Example
+height
+Type: integer
+Altura del paquete.
+Example
+quantity
+Type: integer
+Cantidad de paquetes con las mismas medidas.
+Example
+dimension_unit
+Type: string
+Unidad de medida de las dimensiones.
+Example
+mass_unit
+Type: string
+Unidad de medida del peso.
+Example
+package_type
+Type: string
+Tipo de paquete, requerido para automatizaciones que crean guía automática.
+Example
+consignment_note
+Type: string
+Este dato se utilizará para registrar la Carta Porte, requisito legal solicitado por el Sistema de Administración Tributaria (SAT) para realizar tu envío, requerido para automatizaciones que crean guía automática.
+Example
+products
+Array of:
+Object:
+name
+Type: string
+Nombre del producto.
+Example
+hs_code
+Type: string
+Código HS del producto.
+Example
+sku
+Type: string
+Código del producto.
+Example
+price
+Type: string
+Precio del producto.
+Example
+quantity
+Type: integer
+Cantidad de productos.
+Example
+weight
+Type: float
+Peso del producto en kilogramos.
+Example
+height
+Type: integer
+Altura del producto en centímetros.
+Example
+length
+Type: integer
+Longitud del producto en centímetros.
+Example
+width
+Type: integer
+Ancho del producto en centímetros.
+Example
+shipper_address
+Object:
+address
+Type: string
+Nombre de la calle o avenida.
+Example
+internal_number
+Type: string
+Número de la casa o departamento.
+Example
+reference
+Type: string
+Referencia de la dirección.
+Example
+sector
+Type: string
+Nombre de la Colonia.
+Example
+city
+Type: string
+Nombre de la ciudad.
+Example
+state
+Type: string
+Nombre del estado.
+Example
+postal_code
+Type: string
+Código postal.
+Example
+country
+Type: string
+Código de país según el formato alpha-2 de la ISO 3166-1.
+Example
+person_name
+Type: string
+Nombre de la persona que recibirá los paquetes.
+Example
+company
+Type: string
+Nombre de la empresa que recibirá los paquetes.
+Example
+phone
+Type: string
+Número de teléfono de la persona que recibirá los paquetes.
+Example
+email
+Type: string
+Correo electrónico de la persona que recibirá los paquetes.
+Example
+recipient_address
+Object:
+address
+Type: string
+Nombre de la calle o avenida.
+Example
+internal_number
+Type: string
+Número de la casa o departamento.
+Example
+reference
+Type: string
+Referencia de la dirección.
+Example
+sector
+Type: string
+Nombre de la Colonia.
+Example
+city
+Type: string
+Nombre de la ciudad.
+Example
+state
+Type: string
+Nombre del estado.
+Example
+postal_code
+Type: string
+Código postal.
+Example
+country
+Type: string
+País.
+Example
+person_name
+Type: string
+Nombre de la persona que enviará los paquetes.
+Example
+company
+Type: string
+Nombre de la empresa que enviará los paquetes.
+Example
+phone
+Type: string
+Número de teléfono de la persona que enviará los paquetes.
+Example
+email
+Type: string
+Correo electrónico de la persona que enviará los paquetes.
+Example
+Curl
+Ruby
+Node
+Php
+Python
+curl -X POST 'https://pro.skydropx.com/api/v1/orders/' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer {{BEARER_TOKEN}}' 
+        
+Probar
+Respuestas:
+Código: 201
+Descripción:
+Pedido creado
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "platform": {
+              "type": "string"
+            },
+            "ecommerce_id": {
+              "type": [
+                "string",
+                null
+              ]
+            },
+            "price": {
+              "type": "number",
+              "format": "float"
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "updated_at": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "data"
+  ]
+}
+Ejemplo:
+{
+  "properties": {
+    "data": {
+      "properties": {
+        "id": "e7c50876-2715-4f76-a83d-da5307d58b07",
+        "type": "order",
+        "attributes": {
+          "properties": {
+            "id": "e7c50876-2715-4f76-a83d-da5307d58b07",
+            "platform": "Shopify",
+            "ecommerce_id": {
+            },
+            "price": 100.0,
+            "created_at": "2024-09-05T23:13:40.417-06:00",
+            "updated_at": "2024-09-05T23:13:40.417-06:00"
+          }
+        }
+      }
+    }
+  }
+}
+Código: 403
+Descripción:
+Prohibido
+
+Código: 422
+Descripción:
+Solicitud inválida
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "errors": {
+      "type": "string"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "errors": {
+    }
+  }
+}
+/api/v1/orders/{order_id}
+PATCH
+Resumen: Actualiza una orden
+
+Descripción:
+   PATCH /api/v1/orders/:id
+El endpoint permite actualizar la información de una orden.
+
+Parámetros:
+order_id path
+Required
+Type:
+string
+Ejemplo de Cuerpo de Solicitud:
+Content-Type: application/json
+Object:
+orderRequired
+Object:
+total_price
+Type: string
+Precio total de la orden.
+Example
+payment_status
+Type: string
+Estado de pago.
+Example
+parcels
+Array of:
+Object:
+weight
+Type: float
+Peso del paquete.
+Example
+mass_unit
+Type: string
+Unidad de medida del peso.
+Example
+length
+Type: integer
+Longitud del paquete.
+Example
+width
+Type: integer
+Ancho del paquete.
+Example
+height
+Type: integer
+Altura del paquete.
+Example
+quantity
+Type: integer
+Cantidad de paquetes con las mismas medidas.
+Example
+dimension_unit
+Type: string
+Unidad de medida de las dimensiones.
+Example
+package_type
+Type: string
+Tipo de paquete, requerido para automatizaciones que crean guía automática.
+Example
+consignment_note
+Type: string
+Este dato se utilizará para registrar la Carta Porte, requisito legal solicitado por el Sistema de Administración Tributaria (SAT) para realizar tu envío, requerido para automatizaciones que crean guía automática.
+Example
+products
+Array of:
+Object:
+name
+Type: string
+Nombre del producto.
+Example
+hs_code
+Type: string
+Código HS del producto.
+Example
+sku
+Type: string
+Código del producto.
+Example
+price
+Type: string
+Precio del producto.
+Example
+quantity
+Type: integer
+Cantidad de productos.
+Example
+weight
+Type: integer
+Peso del producto en kilogramos.
+Example
+height
+Type: integer
+Altura del producto en centímetros.
+Example
+length
+Type: integer
+Longitud del producto en centímetros.
+Example
+width
+Type: integer
+Ancho del producto en centímetros.
+Example
+shipper_address
+Object:
+address
+Type: string
+Nombre de la calle o avenida.
+Example
+internal_number
+Type: string
+Número de la casa o departamento.
+Example
+reference
+Type: string
+Referencia de la dirección.
+Example
+sector
+Type: string
+Nombre de la Colonia.
+Example
+city
+Type: string
+Nombre de la ciudad.
+Example
+state
+Type: string
+Nombre del estado.
+Example
+postal_code
+Type: string
+Código postal.
+Example
+country
+Type: string
+Código de país según el formato alpha-2 de la ISO 3166-1.
+Example
+person_name
+Type: string
+Nombre de la persona que recibirá los paquetes.
+Example
+company
+Type: string
+Nombre de la empresa que recibirá los paquetes.
+Example
+phone
+Type: string
+Número de teléfono de la persona que recibirá los paquetes.
+Example
+email
+Type: string
+Correo electrónico de la persona que recibirá los paquetes.
+Example
+recipient_address
+Object:
+address
+Type: string
+Nombre de la calle o avenida.
+Example
+internal_number
+Type: string
+Número de la casa o departamento.
+Example
+reference
+Type: string
+Referencia de la dirección.
+Example
+sector
+Type: string
+Nombre de la Colonia.
+Example
+city
+Type: string
+Nombre de la ciudad.
+Example
+state
+Type: string
+Nombre del estado.
+Example
+postal_code
+Type: string
+Código postal.
+Example
+country
+Type: string
+País.
+Example
+person_name
+Type: string
+Nombre de la persona que enviará los paquetes.
+Example
+company
+Type: string
+Nombre de la empresa que enviará los paquetes.
+Example
+phone
+Type: string
+Número de teléfono de la persona que enviará los paquetes.
+Example
+email
+Type: string
+Correo electrónico de la persona que enviará los paquetes.
+Example
+Curl
+Ruby
+Node
+Php
+Python
+curl -X PATCH 'https://pro.skydropx.com/api/v1/orders/example_order_id' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer {{BEARER_TOKEN}}' 
+        
+Probar
+Respuestas:
+Código: 200
+Descripción:
+Orden actualizada
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "platform": {
+              "type": [
+                "string",
+                null
+              ]
+            },
+            "ecommerce_id": {
+              "type": [
+                "string",
+                null
+              ]
+            },
+            "price": {
+              "type": [
+                "string",
+                null
+              ]
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "address_from": {
+              "type": "object",
+              "nullable": true,
+              "properties": {
+                "area_level1": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "area_level2": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "area_level3": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "name": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "postal_code": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "country_code": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "street1": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "company": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "phone": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "email": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "reference": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "address_type": {
+                  "type": "string"
+                },
+                "apartment_number": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                }
+              }
+            },
+            "address_to": {
+              "type": "object",
+              "nullable": true,
+              "properties": {
+                "area_level1": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "area_level2": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "area_level3": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "name": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "postal_code": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "country_code": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "street1": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "company": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "phone": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "email": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "reference": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                },
+                "address_type": {
+                  "type": "string"
+                },
+                "apartment_number": {
+                  "type": [
+                    "string",
+                    null
+                  ]
+                }
+              }
+            },
+            "parcel": {
+              "type": "object",
+              "properties": {
+                "weight": {
+                  "type": "float"
+                },
+                "length": {
+                  "type": "integer"
+                },
+                "width": {
+                  "type": "integer"
+                },
+                "height": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        },
+        "relationships": {
+          "type": "object",
+          "properties": {
+            "items": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "shipments": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "included": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "sku": {
+                "type": "string",
+                "nullable": true
+              },
+              "quantity": {
+                "type": "integer"
+              },
+              "price": {
+                "type": "number"
+              },
+              "weight": {
+                "type": "number"
+              },
+              "height": {
+                "type": "number"
+              },
+              "width": {
+                "type": "number"
+              },
+              "length": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      },
+      "nullable": true
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "data": {
+      "properties": {
+        "id": "9e270243-762f-40c8-833e-ef1c4ee8282d",
+        "type": "order",
+        "attributes": {
+          "properties": {
+            "id": "9e270243-762f-40c8-833e-ef1c4ee8282d",
+            "platform": "Shopify",
+            "ecommerce_id": "SDFG",
+            "price": "10.0",
+            "created_at": "2025-01-07T14:46:38.203-06:00",
+            "address_from": {
+              "properties": {
+                "area_level1": "Nuevo León",
+                "area_level2": "Monterrey",
+                "area_level3": "La Finca",
+                "name": "Name",
+                "postal_code": "64000",
+                "country_code": "MX",
+                "street1": "Olivo 4618",
+                "company": "",
+                "phone": "1242452456",
+                "email": "email@example.com",
+                "reference": "Green house",
+                "address_type": "from",
+                "apartment_number": ""
+              }
+            },
+            "address_to": {
+              "properties": {
+                "area_level1": "Monterrey Centro",
+                "area_level2": "Monterrey",
+                "area_level3": "La finca",
+                "name": "Mayra Doe",
+                "postal_code": "64000",
+                "country_code": "MX",
+                "street1": "22 Main St",
+                "company": "ACS Inc.",
+                "phone": "1234567890",
+                "email": "jhon@doe.com",
+                "reference": "Near the park",
+                "address_type": "to",
+                "apartment_number": "123"
+              }
+            },
+            "parcel": {
+              "properties": {
+                "weight": 2.0,
+                "length": 10,
+                "width": 10,
+                "height": 10
+              }
+            }
+          }
+        },
+        "relationships": {
+          "properties": {
+            "items": {
+              "properties": {
+                "data": {
+                  "items": {
+                    "properties": {
+                      "id": "c2092234-1b85-41a2-a200-858d052c0ad1",
+                      "type": "item"
+                    }
+                  }
+                }
+              }
+            },
+            "shipments": {
+              "properties": {
+                "data": {
+                  "items": {
+                    "properties": {
+                      "id": "9eae25ba-11b4-4b9f-9b01-3d09da8bc12d",
+                      "type": "shipment"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "included": {
+      "items": {
+        "properties": {
+          "id": "c2092234-1b85-41a2-a200-858d052c0ad1",
+          "type": "item",
+          "attributes": {
+            "properties": {
+              "name": "prueba",
+              "sku": "prueba",
+              "quantity": 2,
+              "price": 15.0,
+              "weight": 20.0,
+              "height": 30.0,
+              "width": 30.0,
+              "length": 30.0
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Código: 422
+Descripción:
+La orden no puede ser actualizada
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "errors": {
+      "type": "string"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "errors": {
+    }
+  }
+}
+Código: 404
+Descripción:
+Orden no encontrada
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "message": {
+      "type": "string"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "message": {
+    }
+  }
+}
+Recolecciones
+/api/v1/pickups/coverage
+GET
+Resumen: Obtiene cobertura de Fechas
+
+Descripción:
+   GET /api/v1/pickups/coverage?shipment_id={shipment_id}
+Este endpoint obtiene la cobertura de fechas para realizar una recolección.
+
+Parámetros de la solicitud:
+
+shipment_id: ID Envío de referencia que obtuviste del endpoint de envíos (GET /api/v1/shipments)
+Parámetros:
+shipment_id query
+Required
+ID Envío
+
+Type:
+string
+Curl
+Ruby
+Node
+Php
+Python
+curl -X GET 'https://pro.skydropx.com/api/v1/pickups/coverage' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer {{BEARER_TOKEN}}' 
+        
+Probar
+Respuestas:
+Código: 200
+Descripción:
+Retorna fechas disponibles para recolección
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "description": "Indica si la solicitud se procesó exitosamente."
+    },
+    "carrier": {
+      "type": "string",
+      "description": "Paquetería responsable de la recolección."
+    },
+    "service": {
+      "type": "string",
+      "description": "Tipo de servicio ofrecido por la paquetería"
+    },
+    "version": {
+      "type": "string"
+    },
+    "pickupDates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "description": "Fecha disponible para la recolección."
+          },
+          "startHour": {
+            "type": "string",
+            "format": "time",
+            "description": "Hora de inicio de la ventana de recolección."
+          },
+          "endHour": {
+            "type": "string",
+            "format": "time",
+            "description": "Hora de finalización de la ventana de recolección."
+          }
+        }
+      }
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "success": true,
+    "carrier": "FEDEX",
+    "service": "FEDEX_EXPRESS_SAVER",
+    "version": "2.0.0",
+    "pickupDates": {
+      "items": {
+        "properties": {
+          "date": "2024-09-20",
+          "startHour": "08:30:00",
+          "endHour": "14:00:00"
+        }
+      }
+    }
+  }
+}
+Código: 422
+Descripción:
+Solicitud inválida
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "success": {
+      "type": "boolean",
+      "description": "Indica si la solicitud se procesó exitosamente."
+    },
+    "message": {
+      "type": "string",
+      "description": "Proporciona detalles sobre el error ocurrido."
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "success": {
+    },
+    "message": "Carrier services error"
+  }
+}
+Código: 404
+Descripción:
+Recurso no encontrado
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "message": {
+      "type": "string"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "message": "El recurso buscado no se pudo encontrar."
+  }
+}
+/api/v1/pickups/{id}/reschedule
+POST
+Resumen: Reprograma una recolección
+
+Descripción:
+   POST /api/v1/pickups/{id}/reschedule
+Este endpoint permite reprogramar una recolección
+
+Parámetros de la solicitud:
+
+reference_shipment_id: Id del envio a recolectar
+packages: Número de paquetes a recolectar
+total_weight: Peso total de los paquetes a recolectar
+scheduled_from: Fecha y hora de inicio de franja horaria de recolección
+scheduled_to: Fecha y hora final de franja horaria de recolección
+Parámetros:
+id path
+Required
+ID de la recolección
+
+Type:
+string
+Ejemplo de Cuerpo de Solicitud:
+Content-Type: application/json
+Object:
+pickupRequired
+Object:
+reference_shipment_id
+Type: string
+Id del envio a recolectar
+Example
+packages
+Type: integer
+Número de paquetes a recolectar
+Example
+total_weight
+Type: ["number", "string"]
+Peso total de los paquetes a recolectar
+Example
+scheduled_from
+Type: string
+Fecha y hora de inicio de franja horaria de recolección
+Example
+scheduled_to
+Type: string
+Fecha y hora final de franja horaria de recolección
+Example
+Curl
+Ruby
+Node
+Php
+Python
+curl -X POST 'https://pro.skydropx.com/api/v1/pickups/example_id/reschedule' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer {{BEARER_TOKEN}}' 
+        
+Probar
+Respuestas:
+Código: 201
+Descripción:
+Retorna la recolección reprogramada
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "type": {
+          "type": "string"
+        },
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID de la recolección"
+            },
+            "status": {
+              "type": "string",
+              "description": "Estado de la recolección"
+            },
+            "request_number": {
+              "type": "string",
+              "description": "Número de solicitud de la recolección"
+            },
+            "packages": {
+              "type": "integer",
+              "description": "Número de paquetes a recolectar"
+            },
+            "total_weight": {
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "decimal",
+              "description": "Peso total de los paquetes a recolectar"
+            },
+            "scheduled_from": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Fecha y hora de inicio de franja horaria de recolección"
+            },
+            "scheduled_to": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Fecha y hora final de franja horaria de recolección"
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Fecha de creación"
+            },
+            "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Fecha de actualización"
+            }
+          }
+        },
+        "relationships": {
+          "type": "object",
+          "properties": {
+            "reference_shipment": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "type": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "address": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "type": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "included": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "UUID de la dirección"
+                  },
+                  "area_level1": {
+                    "type": "string",
+                    "description": "Estado, provincia o departamento de la dirección"
+                  },
+                  "area_level2": {
+                    "type": "string",
+                    "description": "Ciudad o municipio de la dirección"
+                  },
+                  "area_level3": {
+                    "type": "string",
+                    "description": "Barrio o colonia de la dirección"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Nombre del destinatario o remitente"
+                  },
+                  "postal_code": {
+                    "type": "string",
+                    "description": "Código postal de la dirección"
+                  },
+                  "country_code": {
+                    "type": "string",
+                    "description": "Código de país de la dirección"
+                  },
+                  "address_type": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Tipo de dirección"
+                  },
+                  "street1": {
+                    "type": "string",
+                    "description": "Calle y número de la dirección"
+                  },
+                  "company": {
+                    "type": "string",
+                    "description": "Nombre de la empresa"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "description": "Número de teléfono"
+                  },
+                  "email": {
+                    "type": "string",
+                    "description": "Correo electrónico"
+                  },
+                  "reference": {
+                    "type": "string",
+                    "description": "Referencia de la dirección"
+                  },
+                  "apartment_number": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Número de departamento"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "data": {
+      "properties": {
+        "id": "ed06f78a-8757-488c-bb82-31964449aea0",
+        "type": "pickup",
+        "attributes": {
+          "properties": {
+            "id": "ed06f78a-8757-488c-bb82-31964449aea0",
+            "status": "scheduled",
+            "request_number": "123456789",
+            "packages": 1,
+            "total_weight": "30.0",
+            "scheduled_from": "2024-09-20T09:00:00.000-06:00",
+            "scheduled_to": "2024-09-20T14:00:00.000-06:00",
+            "created_at": "2024-09-19T07:43:46.614-06:00",
+            "updated_at": "2024-09-19T07:43:46.614-06:00"
+          }
+        },
+        "relationships": {
+          "properties": {
+            "reference_shipment": {
+              "properties": {
+                "data": {
+                  "properties": {
+                    "id": "d4ad5784-4f71-4474-9f34-e2a6f8366d5e",
+                    "type": "shipment"
+                  }
+                }
+              }
+            },
+            "address": {
+              "properties": {
+                "data": {
+                  "properties": {
+                    "id": "901e4d68-a147-4fdf-9078-c252a672611c",
+                    "type": "address"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "included": {
+      "items": {
+        "oneOf": [
+          {
+            "properties": {
+              "id": {
+              },
+              "type": "address",
+              "attributes": {
+                "properties": {
+                  "id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+                  "area_level1": "Ciudad de México",
+                  "area_level2": "Venustiano Carranza",
+                  "area_level3": "Romero rubio",
+                  "name": "Juan",
+                  "postal_code": "15400",
+                  "country_code": "MX",
+                  "address_type": "from",
+                  "street1": "Persia 143",
+                  "company": "Company name",
+                  "phone": "3453453453453",
+                  "email": "juan@mail.com",
+                  "reference": "porton",
+                  "apartment_number": "Apartamento 404"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+Código: 404
+Descripción:
+Recolección no encontrada
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "message": {
+      "type": "string"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "message": "El recurso buscado no se pudo encontrar."
+  }
+}
+Código: 422
+Descripción:
+Retorna una respuesta de error
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "errors": {
+      "type": "object"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "errors": {
+    }
+  }
+}
+/api/v1/pickups
+GET
+Resumen: Recupera todas las recolecciones
+
+Descripción:
+   GET /api/v1/pickups?page={page}
+Este endpoint recupera todas las recolecciones, paginadas de diez en diez.
+
+Parámetros:
+page query
+Nro de página
+
+Type:
+integer
+Curl
+Ruby
+Node
+Php
+Python
+curl -X GET 'https://pro.skydropx.com/api/v1/pickups' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer {{BEARER_TOKEN}}' 
+        
+Probar
+Respuestas:
+Código: 200
+Descripción:
+Retorna una colección paginada de recolecciones
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "type": {
+            "type": "string"
+          },
+          "attributes": {
+            "type": "object,",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid",
+                "description": "UUID de la recolección"
+              },
+              "status": {
+                "type": "string",
+                "description": "Estado de la recolección"
+              },
+              "request_number": {
+                "type": "string",
+                "description": "Número de solicitud de la recolección"
+              },
+              "packages": {
+                "type": "integer",
+                "description": "Número de paquetes a recolectar"
+              },
+              "total_weight": {
+                "type": [
+                  "number",
+                  "string"
+                ],
+                "format": "decimal",
+                "description": "Peso total de los paquetes a recolectar"
+              },
+              "scheduled_from": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Fecha y hora de inicio de franja horaria de recolección"
+              },
+              "scheduled_to": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Fecha y hora final de franja horaria de recolección"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Fecha de creación"
+              },
+              "updated_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Fecha de actualización"
+              }
+            }
+          },
+          "relationships": {
+            "type": "object",
+            "properties": {
+              "reference_shipment": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "type": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "address": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "format": "uuid"
+                      },
+                      "type": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "included": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "UUID de la dirección"
+                  },
+                  "area_level1": {
+                    "type": "string",
+                    "description": "Estado, provincia o departamento de la dirección"
+                  },
+                  "area_level2": {
+                    "type": "string",
+                    "description": "Ciudad o municipio de la dirección"
+                  },
+                  "area_level3": {
+                    "type": "string",
+                    "description": "Barrio o colonia de la dirección"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Nombre del destinatario o remitente"
+                  },
+                  "postal_code": {
+                    "type": "string",
+                    "description": "Código postal de la dirección"
+                  },
+                  "country_code": {
+                    "type": "string",
+                    "description": "Código de país de la dirección"
+                  },
+                  "address_type": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Tipo de dirección"
+                  },
+                  "street1": {
+                    "type": "string",
+                    "description": "Calle y número de la dirección"
+                  },
+                  "company": {
+                    "type": "string",
+                    "description": "Nombre de la empresa"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "description": "Número de teléfono"
+                  },
+                  "email": {
+                    "type": "string",
+                    "description": "Correo electrónico"
+                  },
+                  "reference": {
+                    "type": "string",
+                    "description": "Referencia de la dirección"
+                  },
+                  "apartment_number": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Número de departamento"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "current_page": {
+          "type": "integer"
+        },
+        "next_page": {
+          "type": "integer",
+          "nullable": true
+        },
+        "prev_page": {
+          "type": "integer",
+          "nullable": true
+        },
+        "total_pages": {
+          "type": "integer"
+        },
+        "total_count": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "data": {
+      "items": {
+        "properties": {
+          "id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+          "type": "pickup",
+          "attributes": {
+            "properties": {
+              "id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+              "status": "scheduled",
+              "request_number": "123456789",
+              "packages": 5,
+              "total_weight": "30.0",
+              "scheduled_from": {
+              },
+              "scheduled_to": {
+              },
+              "created_at": {
+              },
+              "updated_at": {
+              }
+            }
+          },
+          "relationships": {
+            "properties": {
+              "reference_shipment": {
+                "properties": {
+                  "data": {
+                    "properties": {
+                      "id": {
+                      },
+                      "type": "shipment"
+                    }
+                  }
+                }
+              },
+              "address": {
+                "properties": {
+                  "data": {
+                    "properties": {
+                      "id": {
+                      },
+                      "type": "address"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "included": {
+      "items": {
+        "oneOf": [
+          {
+            "properties": {
+              "id": {
+              },
+              "type": "address",
+              "attributes": {
+                "properties": {
+                  "id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+                  "area_level1": "Ciudad de México",
+                  "area_level2": "Venustiano Carranza",
+                  "area_level3": "Romero rubio",
+                  "name": "Juan",
+                  "postal_code": "15400",
+                  "country_code": "MX",
+                  "address_type": "from",
+                  "street1": "Persia 143",
+                  "company": "Company name",
+                  "phone": "3453453453453",
+                  "email": "juan@mail.com",
+                  "reference": "porton",
+                  "apartment_number": "Apartamento 404"
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "meta": {
+      "properties": {
+        "current_page": 2,
+        "next_page": 3,
+        "prev_page": 1,
+        "total_pages": 3,
+        "total_count": 30
+      }
+    }
+  }
+}
+/api/v1/pickups/{id}
+GET
+Resumen: Detalle de Recolección
+
+Descripción:
+   GET /api/v1/pickups/{id}
+Este endpoint recupera una recolección
+
+Parámetros:
+id path
+Required
+ID de la recolección
+
+Type:
+string
+Curl
+Ruby
+Node
+Php
+Python
+curl -X GET 'https://pro.skydropx.com/api/v1/pickups/example_id' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer {{BEARER_TOKEN}}' 
+        
+Probar
+Respuestas:
+Código: 200
+Descripción:
+Recolección encontrada
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "type": {
+          "type": "string"
+        },
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID de la recolección"
+            },
+            "status": {
+              "type": "string",
+              "description": "Estado de la recolección"
+            },
+            "request_number": {
+              "type": "string",
+              "description": "Número de solicitud de la recolección"
+            },
+            "packages": {
+              "type": "integer",
+              "description": "Número de paquetes a recolectar"
+            },
+            "total_weight": {
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "decimal",
+              "description": "Peso total de los paquetes a recolectar"
+            },
+            "scheduled_from": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Fecha y hora de inicio de franja horaria de recolección"
+            },
+            "scheduled_to": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Fecha y hora final de franja horaria de recolección"
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Fecha de creación"
+            },
+            "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Fecha de actualización"
+            }
+          }
+        },
+        "relationships": {
+          "type": "object",
+          "properties": {
+            "reference_shipment": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "type": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "address": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "type": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "included": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "UUID de la dirección"
+                  },
+                  "area_level1": {
+                    "type": "string",
+                    "description": "Estado, provincia o departamento de la dirección"
+                  },
+                  "area_level2": {
+                    "type": "string",
+                    "description": "Ciudad o municipio de la dirección"
+                  },
+                  "area_level3": {
+                    "type": "string",
+                    "description": "Barrio o colonia de la dirección"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Nombre del destinatario o remitente"
+                  },
+                  "postal_code": {
+                    "type": "string",
+                    "description": "Código postal de la dirección"
+                  },
+                  "country_code": {
+                    "type": "string",
+                    "description": "Código de país de la dirección"
+                  },
+                  "address_type": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Tipo de dirección"
+                  },
+                  "street1": {
+                    "type": "string",
+                    "description": "Calle y número de la dirección"
+                  },
+                  "company": {
+                    "type": "string",
+                    "description": "Nombre de la empresa"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "description": "Número de teléfono"
+                  },
+                  "email": {
+                    "type": "string",
+                    "description": "Correo electrónico"
+                  },
+                  "reference": {
+                    "type": "string",
+                    "description": "Referencia de la dirección"
+                  },
+                  "apartment_number": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Número de departamento"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "data": {
+      "properties": {
+        "id": "ed06f78a-8757-488c-bb82-31964449aea0",
+        "type": "pickup",
+        "attributes": {
+          "properties": {
+            "id": "ed06f78a-8757-488c-bb82-31964449aea0",
+            "status": "scheduled",
+            "request_number": "123456789",
+            "packages": 1,
+            "total_weight": "30.0",
+            "scheduled_from": "2024-09-20T09:00:00.000-06:00",
+            "scheduled_to": "2024-09-20T14:00:00.000-06:00",
+            "created_at": "2024-09-19T07:43:46.614-06:00",
+            "updated_at": "2024-09-19T07:43:46.614-06:00"
+          }
+        },
+        "relationships": {
+          "properties": {
+            "reference_shipment": {
+              "properties": {
+                "data": {
+                  "properties": {
+                    "id": "d4ad5784-4f71-4474-9f34-e2a6f8366d5e",
+                    "type": "shipment"
+                  }
+                }
+              }
+            },
+            "address": {
+              "properties": {
+                "data": {
+                  "properties": {
+                    "id": "901e4d68-a147-4fdf-9078-c252a672611c",
+                    "type": "address"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "included": {
+      "items": {
+        "oneOf": [
+          {
+            "properties": {
+              "id": {
+              },
+              "type": "address",
+              "attributes": {
+                "properties": {
+                  "id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+                  "area_level1": "Ciudad de México",
+                  "area_level2": "Venustiano Carranza",
+                  "area_level3": "Romero rubio",
+                  "name": "Juan",
+                  "postal_code": "15400",
+                  "country_code": "MX",
+                  "address_type": "from",
+                  "street1": "Persia 143",
+                  "company": "Company name",
+                  "phone": "3453453453453",
+                  "email": "juan@mail.com",
+                  "reference": "porton",
+                  "apartment_number": "Apartamento 404"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+Código: 404
+Descripción:
+Recolección no encontrada
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "message": {
+      "type": "string"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "message": "El recurso buscado no se pudo encontrar."
+  }
+}
+/api/v1/pickups/
+POST
+Resumen: Programa una recolección
+
+Descripción:
+   POST /api/v1/pickups/
+Este endpoint permite programar una recolección
+
+Parámetros de la solicitud:
+
+reference_shipment_id: Id del envio a recolectar
+packages: Número de paquetes a recolectar
+total_weight: Peso total de los paquetes a recolectar
+scheduled_from: Fecha y hora de inicio de franja horaria de recolección
+scheduled_to: Fecha y hora final de franja horaria de recolección
+Ejemplo de Cuerpo de Solicitud:
+Content-Type: application/json
+Object:
+pickupRequired
+Object:
+reference_shipment_id
+Type: string
+Id del envio a recolectar
+Example
+packages
+Type: integer
+Número de paquetes a recolectar
+Example
+total_weight
+Type: ["number", "string"]
+Peso total de los paquetes a recolectar
+Example
+scheduled_from
+Type: string
+Fecha y hora de inicio de franja horaria de recolección
+Example
+scheduled_to
+Type: string
+Fecha y hora final de franja horaria de recolección
+Example
+Curl
+Ruby
+Node
+Php
+Python
+curl -X POST 'https://pro.skydropx.com/api/v1/pickups/' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer {{BEARER_TOKEN}}' 
+        
+Probar
+Respuestas:
+Código: 201
+Descripción:
+Retorna la recolección programada
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "type": {
+          "type": "string"
+        },
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "UUID de la recolección"
+            },
+            "status": {
+              "type": "string",
+              "description": "Estado de la recolección"
+            },
+            "request_number": {
+              "type": "string",
+              "description": "Número de solicitud de la recolección"
+            },
+            "packages": {
+              "type": "integer",
+              "description": "Número de paquetes a recolectar"
+            },
+            "total_weight": {
+              "type": [
+                "number",
+                "string"
+              ],
+              "format": "decimal",
+              "description": "Peso total de los paquetes a recolectar"
+            },
+            "scheduled_from": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Fecha y hora de inicio de franja horaria de recolección"
+            },
+            "scheduled_to": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Fecha y hora final de franja horaria de recolección"
+            },
+            "created_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Fecha de creación"
+            },
+            "updated_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Fecha de actualización"
+            }
+          }
+        },
+        "relationships": {
+          "type": "object",
+          "properties": {
+            "reference_shipment": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "type": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "address": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "type": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "included": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "UUID de la dirección"
+                  },
+                  "area_level1": {
+                    "type": "string",
+                    "description": "Estado, provincia o departamento de la dirección"
+                  },
+                  "area_level2": {
+                    "type": "string",
+                    "description": "Ciudad o municipio de la dirección"
+                  },
+                  "area_level3": {
+                    "type": "string",
+                    "description": "Barrio o colonia de la dirección"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Nombre del destinatario o remitente"
+                  },
+                  "postal_code": {
+                    "type": "string",
+                    "description": "Código postal de la dirección"
+                  },
+                  "country_code": {
+                    "type": "string",
+                    "description": "Código de país de la dirección"
+                  },
+                  "address_type": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Tipo de dirección"
+                  },
+                  "street1": {
+                    "type": "string",
+                    "description": "Calle y número de la dirección"
+                  },
+                  "company": {
+                    "type": "string",
+                    "description": "Nombre de la empresa"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "description": "Número de teléfono"
+                  },
+                  "email": {
+                    "type": "string",
+                    "description": "Correo electrónico"
+                  },
+                  "reference": {
+                    "type": "string",
+                    "description": "Referencia de la dirección"
+                  },
+                  "apartment_number": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Número de departamento"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "data": {
+      "properties": {
+        "id": "ed06f78a-8757-488c-bb82-31964449aea0",
+        "type": "pickup",
+        "attributes": {
+          "properties": {
+            "id": "ed06f78a-8757-488c-bb82-31964449aea0",
+            "status": "scheduled",
+            "request_number": "123456789",
+            "packages": 1,
+            "total_weight": "30.0",
+            "scheduled_from": "2024-09-20T09:00:00.000-06:00",
+            "scheduled_to": "2024-09-20T14:00:00.000-06:00",
+            "created_at": "2024-09-19T07:43:46.614-06:00",
+            "updated_at": "2024-09-19T07:43:46.614-06:00"
+          }
+        },
+        "relationships": {
+          "properties": {
+            "reference_shipment": {
+              "properties": {
+                "data": {
+                  "properties": {
+                    "id": "d4ad5784-4f71-4474-9f34-e2a6f8366d5e",
+                    "type": "shipment"
+                  }
+                }
+              }
+            },
+            "address": {
+              "properties": {
+                "data": {
+                  "properties": {
+                    "id": "901e4d68-a147-4fdf-9078-c252a672611c",
+                    "type": "address"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "included": {
+      "items": {
+        "oneOf": [
+          {
+            "properties": {
+              "id": {
+              },
+              "type": "address",
+              "attributes": {
+                "properties": {
+                  "id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+                  "area_level1": "Ciudad de México",
+                  "area_level2": "Venustiano Carranza",
+                  "area_level3": "Romero rubio",
+                  "name": "Juan",
+                  "postal_code": "15400",
+                  "country_code": "MX",
+                  "address_type": "from",
+                  "street1": "Persia 143",
+                  "company": "Company name",
+                  "phone": "3453453453453",
+                  "email": "juan@mail.com",
+                  "reference": "porton",
+                  "apartment_number": "Apartamento 404"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+Código: 400
+Descripción:
+Retorna una respuesta de error (solicitud incorrecta)
+
+Código: 422
+Descripción:
+Retorna una respuesta de error
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "errors": {
+      "type": "object"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "errors": {
+    }
+  }
+}
+Productos
+/api/v1/products
+GET
+Resumen: Obtener lista de productos
+
+Descripción:
+   GET /api/v1/products
+El endpoint de productos sirve para obtener una lista de productos.
+
+Parámetros de la solicitud:
+
+Parámetros:
+page query
+Número de página a recuperar
+
+Type:
+integer
+Example
+1
+filters[destination_country_code] query
+Filtrar productos por código de país de destino
+
+Type:
+string
+Example
+"MX"
+Curl
+Ruby
+Node
+Php
+Python
+curl -X GET 'https://pro.skydropx.com/api/v1/products' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer {{BEARER_TOKEN}}' 
+        
+Probar
+Respuestas:
+Código: 200
+Descripción:
+Devuelve una lista de productos
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "El id del producto"
+          },
+          "type": {
+            "type": "string"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "El id del producto"
+              },
+              "name": {
+                "type": "string",
+                "description": "El nombre del producto"
+              },
+              "sku": {
+                "type": "string",
+                "description": "El código del producto"
+              },
+              "hscode": {
+                "type": "string",
+                "description": "El código HS del producto"
+              },
+              "description": {
+                "type": "string",
+                "description": "La descripción del producto"
+              },
+              "weight": {
+                "type": "number",
+                "description": "El peso del producto"
+              },
+              "width": {
+                "type": "number",
+                "description": "El ancho del producto"
+              },
+              "height": {
+                "type": "number",
+                "description": "La altura del producto"
+              },
+              "length": {
+                "type": "number",
+                "description": "La longitud del producto"
+              },
+              "price": {
+                "type": "number",
+                "description": "El precio del producto"
+              },
+              "created_at": {
+                "type": "string",
+                "description": "La fecha de creación del producto"
+              },
+              "updated_at": {
+                "type": "string",
+                "description": "La fecha de actualización del producto"
+              },
+              "country_id": {
+                "type": "string",
+                "description": "El id del país del producto"
+              },
+              "product_type_code": {
+                "type": "string",
+                "description": "El código del tipo de producto"
+              },
+              "product_type_name": {
+                "type": "string",
+                "description": "El nombre del tipo de producto"
+              },
+              "description_en": {
+                "type": "string",
+                "description": "La descripción del producto en inglés"
+              },
+              "created_from": {
+                "type": "string",
+                "description": "La fuente de creación del producto"
+              },
+              "international_shipment_enabled": {
+                "type": "boolean",
+                "description": "Indica si el producto está habilitado para envío internacional"
+              },
+              "price_mxn": {
+                "type": "number",
+                "description": "El precio del producto en pesos mexicanos"
+              },
+              "destination_country_id": {
+                "type": "string",
+                "description": "El id del país de destino del producto"
+              }
+            }
+          }
+        }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "current_page": {
+          "type": "integer"
+        },
+        "next_page": {
+          "type": "integer",
+          "nullable": true
+        },
+        "prev_page": {
+          "type": "integer",
+          "nullable": true
+        },
+        "total_pages": {
+          "type": "integer"
+        },
+        "total_count": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "data": {
+      "items": {
+        "properties": {
+          "id": 73,
+          "type": "product",
+          "attributes": {
+            "properties": {
+              "id": 73,
+              "name": "Pantalón",
+              "sku": 1234567890,
+              "hscode": 6402.2,
+              "description": "Descripción del producto",
+              "weight": 4,
+              "width": 4,
+              "height": 4,
+              "length": 4,
+              "price": 4.5,
+              "created_at": "2025-02-06 20:26:41 -0600",
+              "updated_at": "2025-02-06 20:26:41 -0600",
+              "country_id": "f12f8764-1ee7-48c7-94b3-3f5a4e610e5b",
+              "product_type_code": 31261500,
+              "product_type_name": "Producto 1",
+              "description_en": "Product 1",
+              "created_from": "interface",
+              "international_shipment_enabled": true,
+              "price_mxn": 4.5,
+              "destination_country_id": "f12f8764-1ee7-48c7-94b3-3f5a4e610e5b"
+            }
+          }
+        }
+      }
+    },
+    "meta": {
+      "properties": {
+        "current_page": 2,
+        "next_page": 3,
+        "prev_page": 1,
+        "total_pages": 3,
+        "total_count": 8
+      }
+    }
+  }
+}
+Cotizaciones
+/api/v1/quotations
+POST
+Resumen: Crea una cotización
+
+Descripción:
+   POST /api/v1/quotations
+El endpoint de cotizaciones se utiliza para consultar los precios con las diferentes transportadoras.
+
+Ejemplo de Cuerpo de Solicitud: Cotización Nacional
+Content-Type: application/json
+Object:
+quotation
+Object:
+order_id
+Type: string
+ID de la orden a la que pertenece la cotización
+Example
+address_fromRequired
+Object:
+country_codeRequired
+Type: string
+Código de país de la dirección (ISO 3166-1 alpha-2).
+Example
+postal_codeRequired
+Type: string
+Código postal de la dirección.
+Example
+area_level1Required
+Type: string
+Estado, provincia o departamento de la dirección.
+Example
+area_level2Required
+Type: string
+Ciudad o municipio de la dirección.
+Example
+area_level3Required
+Type: string
+Barrio o colonia de la dirección.
+Example
+address_toRequired
+Object:
+country_codeRequired
+Type: string
+Código de país de la dirección (ISO 3166-1 alpha-2).
+Example
+postal_codeRequired
+Type: string
+Código postal de la dirección.
+Example
+area_level1Required
+Type: string
+Estado, provincia o departamento de la dirección.
+Example
+area_level2Required
+Type: string
+Ciudad o municipio de la dirección.
+Example
+area_level3Required
+Type: string
+Barrio o colonia de la dirección.
+Example
+parcelsRequired
+Array of:
+Object:
+lengthRequired
+Type: integer
+Longitud del paquete.
+Example
+widthRequired
+Type: integer
+Ancho del paquete.
+Example
+heightRequired
+Type: integer
+Altura del paquete.
+Example
+weightRequired
+Type: float
+Peso del paquete.
+Example
+requested_carriers
+Array of:
+Type: string
+Paqueterias a cotizar.
+Example
+Ejemplo de Cuerpo de Solicitud: Cotización Internacional
+Content-Type: application/json
+Object:
+quotation
+Object:
+order_id
+Type: string
+ID de la orden a la que pertenece la cotización
+Example
+address_fromRequired
+Object:
+country_codeRequired
+Type: string
+Código de país de la dirección (ISO 3166-1 alpha-2).
+Example
+postal_codeRequired
+Type: string
+Código postal de la dirección.
+Example
+area_level1Required
+Type: string
+Estado, provincia o departamento de la dirección.
+Example
+area_level2Required
+Type: string
+Ciudad o municipio de la dirección.
+Example
+area_level3Required
+Type: string
+Barrio o colonia de la dirección.
+Example
+address_toRequired
+Object:
+country_codeRequired
+Type: string
+Código de país de la dirección (ISO 3166-1 alpha-2).
+Example
+postal_codeRequired
+Type: string
+Código postal de la dirección.
+Example
+area_level1Required
+Type: string
+Estado, provincia o departamento de la dirección.
+Example
+area_level2Required
+Type: string
+Ciudad o municipio de la dirección.
+Example
+area_level3
+Type: string
+Barrio o colonia de la dirección.
+Example
+parcelsRequired
+Array of:
+Object:
+lengthRequired
+Type: integer
+Longitud del paquete.
+Example
+widthRequired
+Type: integer
+Ancho del paquete.
+Example
+heightRequired
+Type: integer
+Altura del paquete.
+Example
+weightRequired
+Type: float
+Peso del paquete.
+Example
+productsRequired
+Array of:
+Object:
+hs_codeRequired
+Type: string
+Código HS del producto.
+Example
+description_enRequired
+Type: string
+Descripción del producto en inglés.
+Example
+country_codeRequired
+Type: string
+Código de país del producto (ISO 3166-1 alpha-2).
+Example
+quantityRequired
+Type: integer
+Cantidad del producto.
+Example
+priceRequired
+Type: float
+Precio del producto.
+Example
+requested_carriers
+Array of:
+Type: string
+Paqueterias a cotizar.
+Example
+Curl
+Ruby
+Node
+Php
+Python
+curl -X POST 'https://pro.skydropx.com/api/v1/quotations' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer {{BEARER_TOKEN}}' 
+        
+Probar
+Respuestas:
+Código: 201
+Descripción:
+Retorna una respuesta completa de cotización
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "ID de la cotización."
+    },
+    "is_completed": {
+      "type": "boolean",
+      "description": "Estado de la cotización."
+    },
+    "quotation_scope": {
+      "type": "object",
+      "oneOf": [
+        {
+          "properties": {
+            "carriers_scoped_to": {
+              "type": "string",
+              "enum": [
+                "ALL_AVAILABLE",
+                "PARTIALLY_SELECTED_CARRIERS"
+              ],
+              "description": "Paqueterias cotizadas (todas las paqueterias `ALL_AVAILABLE`)(paqueterias seleccionadas `PARTIALLY_SELECTED_CARRIERS`)"
+            }
+          }
+        },
+        {
+          "properties": {
+            "carriers_scoped_to": {
+              "type": "string",
+              "enum": [
+                "ALL_AVAILABLE",
+                "PARTIALLY_SELECTED_CARRIERS"
+              ],
+              "description": "Paqueterias cotizadas (todas las paqueterias `ALL_AVAILABLE`)(paqueterias seleccionadas `PARTIALLY_SELECTED_CARRIERS`)"
+            },
+            "found_carriers": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "Paqueterias encontradas."
+              }
+            },
+            "not_found_carriers": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "Paqueterias no encontradas."
+              }
+            }
+          }
+        }
+      ],
+      "required": [
+        "carriers_scoped_to"
+      ]
+    },
+    "rates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID de la tarifa."
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Indicador de éxito."
+          },
+          "rate_type": {
+            "type": "string",
+            "nullable": true,
+            "description": "Tipo de tarifa."
+          },
+          "country_code": {
+            "type": "string",
+            "nullable": true,
+            "description": "Código de país de la dirección."
+          },
+          "provider_name": {
+            "type": "string",
+            "description": "Nombre de la paquetería."
+          },
+          "provider_service_name": {
+            "type": "string",
+            "description": "Nombre del servicio de la paquetería."
+          },
+          "provider_service_code": {
+            "type": "string",
+            "description": "Código del servicio de la paquetería."
+          },
+          "status": {
+            "type": "string",
+            "description": "Estado de la tarifa (Tarifa pendiente `pending`)(Tafira no aplica `not_applicable`)(Tarifa encontrada `approved`)(Tarifa sin cobertura `no_coverage`)(Tarifa con cobertura comprobada `coverage_checked`)(Tarifa encontrada `price_found_internal`)(Tarifa encontrada `price_found_external`)(Tarifa sin precio `tariff_price_not_found`)"
+          },
+          "currency_code": {
+            "type": "string",
+            "description": "Código de moneda."
+          },
+          "cost": {
+            "type": "number",
+            "nullable": true,
+            "description": "Costo de la tarifa."
+          },
+          "amount": {
+            "type": "string",
+            "description": "Monto de la tarifa."
+          },
+          "total": {
+            "type": "string",
+            "description": "Total de la tarifa."
+          },
+          "weight": {
+            "type": "float",
+            "description": "Peso del paquete."
+          },
+          "days": {
+            "type": "integer",
+            "description": "Días de entrega."
+          },
+          "insurable": {
+            "type": "boolean",
+            "description": "Indicador de seguro."
+          },
+          "has_own_agreement": {
+            "type": "boolean",
+            "description": "Indicador de acuerdo propio."
+          },
+          "own_agreement_amount": {
+            "type": "number",
+            "nullable": true,
+            "description": "Monto del acuerdo propio."
+          },
+          "extra_fees": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "string"
+                }
+              }
+            },
+            "nullable": true
+          },
+          "error_messages": {
+            "type": "array",
+            "nullable": true
+          },
+          "zone": {
+            "type": "string",
+            "nullable": true,
+            "description": "Zona de la tarifa."
+          },
+          "plan_type": {
+            "type": "string",
+            "nullable": true,
+            "description": "Tipo de plan."
+          }
+        }
+      }
+    },
+    "packages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "package_number": {
+            "type": "integer",
+            "description": "Número de índice del paquete cotizado."
+          },
+          "weight": {
+            "type": "string",
+            "description": "Peso del paquete."
+          },
+          "length": {
+            "type": "string",
+            "description": "Longitud del paquete."
+          },
+          "width": {
+            "type": "string",
+            "description": "Ancho del paquete."
+          },
+          "height": {
+            "type": "string",
+            "description": "Altura del paquete."
+          }
+        }
+      }
+    },
+    "overweight": {
+      "type": "boolean",
+      "description": "Indicador de sobrepeso del paquete."
+    }
+  },
+  "required": [
+    "id",
+    "is_completed",
+    "quotation_scope"
+  ]
+}
+Ejemplo:
+{
+  "properties": {
+    "id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+    "is_completed": true,
+    "quotation_scope": {
+      "oneOf": [
+        {
+          "properties": {
+            "carriers_scoped_to": "ALL_AVAILABLE"
+          }
+        },
+        {
+          "properties": {
+            "carriers_scoped_to": "ALL_AVAILABLE",
+            "found_carriers": {
+              "items": {
+              }
+            },
+            "not_found_carriers": {
+              "items": {
+              }
+            }
+          }
+        }
+      ]
+    },
+    "rates": {
+      "items": {
+        "properties": {
+          "id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+          "success": true,
+          "rate_type": {
+          },
+          "country_code": "mx",
+          "provider_name": "fedex",
+          "provider_service_name": "Standard Overnight",
+          "provider_service_code": "standard_overnight",
+          "status": "pending",
+          "currency_code": "MXN",
+          "cost": {
+          },
+          "amount": 150.0,
+          "total": 150.0,
+          "weight": 5,
+          "days": 2,
+          "insurable": true,
+          "has_own_agreement": {
+          },
+          "own_agreement_amount": {
+          },
+          "extra_fees": {
+            "items": {
+              "properties": {
+                "code": {
+                },
+                "value": {
+                }
+              }
+            }
+          },
+          "error_messages": {
+          },
+          "zone": {
+          },
+          "plan_type": {
+          }
+        }
+      }
+    },
+    "packages": {
+      "items": {
+        "properties": {
+          "package_number": 1,
+          "weight": "2.0",
+          "length": "10.0",
+          "width": "10.0",
+          "height": "10.0"
+        }
+      }
+    },
+    "overweight": {
+    }
+  }
+}
+Código: 422
+Descripción:
+Retorna una respuesta de error
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "errors": {
+      "type": "object",
+      "properties": {
+        "address_from": {
+          "type": "object",
+          "properties": {
+            "country_code": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "postal_code": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "area_level1": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "area_level2": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "area_level3": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "address_to": {
+          "type": "object",
+          "properties": {
+            "country_code": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "postal_code": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "area_level1": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "area_level2": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "area_level3": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "parcel": {
+          "type": "object",
+          "properties": {
+            "weight": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "length": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "width": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "height": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "error"
+  ]
+}
+Ejemplo:
+{
+  "properties": {
+    "errors": {
+      "properties": {
+        "address_from": {
+          "properties": {
+            "country_code": {
+              "items": {
+              }
+            },
+            "postal_code": {
+              "items": {
+              }
+            },
+            "area_level1": {
+              "items": {
+              }
+            },
+            "area_level2": {
+              "items": {
+              }
+            },
+            "area_level3": {
+              "items": {
+              }
+            }
+          }
+        },
+        "address_to": {
+          "properties": {
+            "country_code": {
+              "items": {
+              }
+            },
+            "postal_code": {
+              "items": {
+              }
+            },
+            "area_level1": {
+              "items": {
+              }
+            },
+            "area_level2": {
+              "items": {
+              }
+            },
+            "area_level3": {
+              "items": {
+              }
+            }
+          }
+        },
+        "parcel": {
+          "properties": {
+            "weight": {
+              "items": {
+              }
+            },
+            "length": {
+              "items": {
+              }
+            },
+            "width": {
+              "items": {
+              }
+            },
+            "height": {
+              "items": {
+              }
+            }
+          }
+        }
+      }
+    },
+    "error": {
+    }
+  }
+}
+Código: 400
+Descripción:
+Retorna una respuesta de error (solicitud incorrecta)
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "message": {
+      "type": "string"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "message": {
+    }
+  }
+}
+/api/v1/quotations/{id}
+GET
+Resumen: Obtiene una cotización
+
+Descripción:
+   GET /api/v1/quotations/{id}
+El endpoint de cotizaciones obtiene las diferentes tarifas de las transportadoras creadas con los datos del paso anterior.
+
+Parámetros de la solicitud:
+
+id: El parámetro que obtuviste del endpoint de cotizaciones (POST /api/v1/quotations) se agrega en esta sección
+Parámetros:
+id path
+Required
+ID de la Cotización
+
+Type:
+string
+Curl
+Ruby
+Node
+Php
+Python
+curl -X GET 'https://pro.skydropx.com/api/v1/quotations/example_id' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer {{BEARER_TOKEN}}' 
+        
+Probar
+Respuestas:
+Código: 200
+Descripción:
+Cotización encontrada
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "ID de la cotización."
+    },
+    "is_completed": {
+      "type": "boolean",
+      "description": "Estado de la cotización."
+    },
+    "quotation_scope": {
+      "type": "object",
+      "oneOf": [
+        {
+          "properties": {
+            "carriers_scoped_to": {
+              "type": "string",
+              "enum": [
+                "ALL_AVAILABLE",
+                "PARTIALLY_SELECTED_CARRIERS"
+              ],
+              "description": "Paqueterias cotizadas (todas las paqueterias `ALL_AVAILABLE`)(paqueterias seleccionadas `PARTIALLY_SELECTED_CARRIERS`)"
+            }
+          }
+        },
+        {
+          "properties": {
+            "carriers_scoped_to": {
+              "type": "string",
+              "enum": [
+                "ALL_AVAILABLE",
+                "PARTIALLY_SELECTED_CARRIERS"
+              ],
+              "description": "Paqueterias cotizadas (todas las paqueterias `ALL_AVAILABLE`)(paqueterias seleccionadas `PARTIALLY_SELECTED_CARRIERS`)"
+            },
+            "found_carriers": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "Paqueterias encontradas."
+              }
+            },
+            "not_found_carriers": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "description": "Paqueterias no encontradas."
+              }
+            }
+          }
+        }
+      ],
+      "required": [
+        "carriers_scoped_to"
+      ]
+    },
+    "rates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID de la tarifa."
+          },
+          "success": {
+            "type": "boolean",
+            "description": "Indicador de éxito."
+          },
+          "rate_type": {
+            "type": "string",
+            "nullable": true,
+            "description": "Tipo de tarifa."
+          },
+          "country_code": {
+            "type": "string",
+            "nullable": true,
+            "description": "Código de país de la dirección."
+          },
+          "provider_name": {
+            "type": "string",
+            "description": "Nombre de la paquetería."
+          },
+          "provider_service_name": {
+            "type": "string",
+            "description": "Nombre del servicio de la paquetería."
+          },
+          "provider_service_code": {
+            "type": "string",
+            "description": "Código del servicio de la paquetería."
+          },
+          "status": {
+            "type": "string",
+            "description": "Estado de la tarifa (Tarifa pendiente `pending`)(Tafira no aplica `not_applicable`)(Tarifa encontrada `approved`)(Tarifa sin cobertura `no_coverage`)(Tarifa con cobertura comprobada `coverage_checked`)(Tarifa encontrada `price_found_internal`)(Tarifa encontrada `price_found_external`)(Tarifa sin precio `tariff_price_not_found`)"
+          },
+          "currency_code": {
+            "type": "string",
+            "description": "Código de moneda."
+          },
+          "cost": {
+            "type": "number",
+            "nullable": true,
+            "description": "Costo de la tarifa."
+          },
+          "amount": {
+            "type": "string",
+            "description": "Monto de la tarifa."
+          },
+          "total": {
+            "type": "string",
+            "description": "Total de la tarifa."
+          },
+          "weight": {
+            "type": "float",
+            "description": "Peso del paquete."
+          },
+          "days": {
+            "type": "integer",
+            "description": "Días de entrega."
+          },
+          "insurable": {
+            "type": "boolean",
+            "description": "Indicador de seguro."
+          },
+          "has_own_agreement": {
+            "type": "boolean",
+            "description": "Indicador de acuerdo propio."
+          },
+          "own_agreement_amount": {
+            "type": "number",
+            "nullable": true,
+            "description": "Monto del acuerdo propio."
+          },
+          "extra_fees": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "string"
+                }
+              }
+            },
+            "nullable": true
+          },
+          "error_messages": {
+            "type": "array",
+            "nullable": true
+          },
+          "zone": {
+            "type": "string",
+            "nullable": true,
+            "description": "Zona de la tarifa."
+          },
+          "plan_type": {
+            "type": "string",
+            "nullable": true,
+            "description": "Tipo de plan."
+          }
+        }
+      }
+    },
+    "packages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "package_number": {
+            "type": "integer",
+            "description": "Número de índice del paquete cotizado."
+          },
+          "weight": {
+            "type": "string",
+            "description": "Peso del paquete."
+          },
+          "length": {
+            "type": "string",
+            "description": "Longitud del paquete."
+          },
+          "width": {
+            "type": "string",
+            "description": "Ancho del paquete."
+          },
+          "height": {
+            "type": "string",
+            "description": "Altura del paquete."
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "id",
+    "is_completed",
+    "quotation_scope"
+  ]
+}
+Ejemplo:
+{
+  "properties": {
+    "id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+    "is_completed": true,
+    "quotation_scope": {
+      "oneOf": [
+        {
+          "properties": {
+            "carriers_scoped_to": "ALL_AVAILABLE"
+          }
+        },
+        {
+          "properties": {
+            "carriers_scoped_to": "ALL_AVAILABLE",
+            "found_carriers": {
+              "items": {
+              }
+            },
+            "not_found_carriers": {
+              "items": {
+              }
+            }
+          }
+        }
+      ]
+    },
+    "rates": {
+      "items": {
+        "properties": {
+          "id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+          "success": true,
+          "rate_type": {
+          },
+          "country_code": "mx",
+          "provider_name": "fedex",
+          "provider_service_name": "Standard Overnight",
+          "provider_service_code": "standard_overnight",
+          "status": "pending",
+          "currency_code": "MXN",
+          "cost": {
+          },
+          "amount": 150.0,
+          "total": 150.0,
+          "weight": 5,
+          "days": 2,
+          "insurable": true,
+          "has_own_agreement": {
+          },
+          "own_agreement_amount": {
+          },
+          "extra_fees": {
+            "items": {
+              "properties": {
+                "code": {
+                },
+                "value": {
+                }
+              }
+            }
+          },
+          "error_messages": {
+          },
+          "zone": {
+          },
+          "plan_type": {
+          }
+        }
+      }
+    },
+    "packages": {
+      "items": {
+        "properties": {
+          "package_number": 1,
+          "weight": "2.0",
+          "length": "10.0",
+          "width": "10.0",
+          "height": "10.0"
+        }
+      }
+    }
+  }
+}
+Código: 404
+Descripción:
+Cotización no encontrada
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "message": {
+      "type": "string"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "message": {
+    }
+  }
+}
+Opciones de impresión
+/api/v1/settings/printing_formats
+PATCH
+Resumen: Actualiza el formato de impresión
+
+Descripción:
+Establece el formato de impresión según el tipo de impresora que se utilice.
+
+Ejemplo de Cuerpo de Solicitud:
+Content-Type: application/json
+Object:
+printing_format
+Type: string
+Formato de impresión de la guía, puede ser `standard` o `thermal`.
+Example
+Curl
+Ruby
+Node
+Php
+Python
+curl -X PATCH 'https://pro.skydropx.com/api/v1/settings/printing_formats' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer {{BEARER_TOKEN}}' 
+        
+Probar
+Respuestas:
+Código: 202
+Descripción:
+Solicitud aceptada.
+
+Código: 422
+Descripción:
+Solicitud inválida.
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "errors": {
+      "type": "array"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "errors": "Formato de impresión inválido"
+  }
+}
+Envíos
+/api/v1/shipments/{shipment_id}/cancellations
+POST
+Resumen: Cancelar un envío
+
+Descripción:
+Este endpoint permite cancelar un envío.
+
+Parámetros:
+shipment_id path
+Required
+Type:
+string
+Ejemplo de Cuerpo de Solicitud:
+Content-Type: application/json
+Object:
+reason
+Type: string
+Razón de la cancelación.
+Example
+shipment_id
+Type: string
+Id o número de rastreo del envío.
+Example
+Curl
+Ruby
+Node
+Php
+Python
+curl -X POST 'https://pro.skydropx.com/api/v1/shipments/example_shipment_id/cancellations' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer {{BEARER_TOKEN}}' 
+        
+Probar
+Respuestas:
+Código: 201
+Descripción:
+Retorna la cancelcación del envío
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "UUID de la cancelación"
+    },
+    "reason": {
+      "type": "string",
+      "description": "Razón de la cancelación"
+    },
+    "status": {
+      "type": "string",
+      "description": "Estado de la cancelación"
+    },
+    "success": {
+      "type": "boolean",
+      "description": "Indicador de éxito"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+    "reason": "Ya no es necesario",
+    "status": "approved",
+    "success": true
+  }
+}
+Código: 422
+Descripción:
+El envío no se puede cancelar
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "error": {
+      "type": "string"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "error": {
+    }
+  }
+}
+Código: 404
+Descripción:
+Envío no encontrado
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "message": {
+      "type": "string"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "message": {
+    }
+  }
+}
+/api/v1/shipments/{shipment_id}/protect
+POST
+Resumen: Protege un envío
+
+Descripción:
+Este endpoint permite proteger un envío.
+
+Parámetros:
+shipment_id path
+Required
+Type:
+string
+Ejemplo de Cuerpo de Solicitud:
+Content-Type: application/json
+Object:
+protectRequired
+Object:
+declared_value
+Type: string
+Valor declarado del envío
+Example
+shipment_id
+Type: string
+UUID del envío
+Example
+Curl
+Ruby
+Node
+Php
+Python
+curl -X POST 'https://pro.skydropx.com/api/v1/shipments/example_shipment_id/protect' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer {{BEARER_TOKEN}}' 
+        
+Probar
+Respuestas:
+Código: 201
+Descripción:
+Retorna la información de la protección del envío
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "declared_value": {
+              "type": "string",
+              "description": "Valor declarado del envío"
+            },
+            "total": {
+              "type": "string",
+              "description": "Costo total de la protección del envío"
+            },
+            "fixed_cost": {
+              "type": "string",
+              "description": "Costo fijo del envío"
+            },
+            "percentage": {
+              "type": "number",
+              "description": "Costo porcentaje del envío"
+            },
+            "created_at": {
+              "type": "string",
+              "description": "Fecha de creación de la protección"
+            },
+            "updated_at": {
+              "type": "string",
+              "description": "Fecha de actualización de la protección"
+            },
+            "shipment_id": {
+              "type": "string",
+              "description": "UUID del envío"
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "data"
+  ]
+}
+Ejemplo:
+{
+  "properties": {
+    "data": {
+      "properties": {
+        "id": "681ddd3e-4fc5-4c15-bfed-f9f4224e8095",
+        "type": "protect",
+        "attributes": {
+          "properties": {
+            "id": "681ddd3e-4fc5-4c15-bfed-f9f4224e8095",
+            "declared_value": 1000,
+            "total": 110,
+            "fixed_cost": 10,
+            "percentage": 10,
+            "created_at": "2024-10-09 13:38:33",
+            "updated_at": "2024-10-09 13:38:33",
+            "shipment_id": "7f433cf4-e54a-4294-b421-1522cd377c12"
+          }
+        }
+      }
+    }
+  }
+}
+Código: 422
+Descripción:
+El envío no se puede proteger
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "errors": {
+      "type": "string"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "errors": "Valor declarado debe estar entre 100.0 y 500.0"
+  }
+}
+/api/v1/shipments/tracking?tracking_number={tracking_number}&carrier_name={carrier_name}
+GET
+Resumen: Rastrea un envío
+
+Descripción:
+Este endpoint permite rastrear un envío.
+
+Parámetros:
+tracking_number path
+Required
+Type:
+string
+carrier_name path
+Required
+Type:
+string
+Curl
+Ruby
+Node
+Php
+Python
+curl -X GET 'https://pro.skydropx.com/api/v1/shipments/tracking?tracking_number=example_tracking_number&carrier_name=example_carrier_name' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer {{BEARER_TOKEN}}' 
+        
+Probar
+Respuestas:
+Código: 200
+Descripción:
+Retorna la lista de los eventos ocurridos
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "array",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "UUID del evento de rastreo"
+        },
+        "type": {
+          "type": "string",
+          "description": "Tipo de registro"
+        },
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "description": {
+              "type": "string",
+              "description": "Descripción del estado"
+            },
+            "location": {
+              "type": "string",
+              "description": "Ubicación donde ocurrio el evento"
+            },
+            "date": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Fecha del evento"
+            },
+            "status": {
+              "type": "string",
+              "description": "Código del estado"
+            }
+          }
+        }
+      }
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "data": {
+      "properties": {
+        "id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+        "type": {
+        },
+        "attributes": {
+          "properties": {
+            "description": "EN RUTA DE ENTREGA",
+            "location": "CORDOBA",
+            "date": "2024-09-05T23:13:00",
+            "status": "last_mile"
+          }
+        }
+      }
+    }
+  }
+}
+Código: 404
+Descripción:
+Este número de guía no cuenta con eventos de rastreo
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "error": {
+      "type": "string"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "error": {
+    }
+  }
+}
+/api/v1/shipments
+GET
+Resumen: Recupera todos los envíos
+
+Descripción:
+Este endpoint recupera todos los envíos, paginados de diez en diez.
+
+Parámetros:
+page query
+Type:
+integer
+Curl
+Ruby
+Node
+Php
+Python
+curl -X GET 'https://pro.skydropx.com/api/v1/shipments' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer {{BEARER_TOKEN}}' 
+        
+Probar
+Respuestas:
+Código: 200
+Descripción:
+Retorna una colección de envíos
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "attributes": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "UUID del envío"
+              },
+              "carrier_name": {
+                "type": "string",
+                "description": "Nombre de la paquetería"
+              },
+              "workflow_status": {
+                "type": "string",
+                "description": "Estado del envío"
+              },
+              "payment_status": {
+                "type": "string",
+                "description": "Estado del pago"
+              },
+              "total": {
+                "type": "string",
+                "description": "Costo total del envío"
+              },
+              "source": {
+                "type": "string",
+                "description": "Origen del envío (Api `api`)"
+              },
+              "carrier_id": {
+                "type": "string",
+                "description": "UUID de la paquetería"
+              },
+              "service_id": {
+                "type": "string",
+                "nullable": true,
+                "description": "UUID del servicio"
+              },
+              "master_tracking_number": {
+                "type": "string",
+                "nullable": true,
+                "description": "Número de rastreo"
+              },
+              "created_at": {
+                "type": "string",
+                "description": "Fecha de creación"
+              },
+              "updated_at": {
+                "type": "string",
+                "description": "Fecha de actualización"
+              }
+            }
+          },
+          "relationships": {
+            "type": "object",
+            "properties": {
+              "packages": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "address_from": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "address_to": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "included": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "UUID del paquete"
+                  },
+                  "package_type": {
+                    "type": "string",
+                    "description": "Tipo de paquete"
+                  },
+                  "weight": {
+                    "type": "string",
+                    "description": "Peso del paquete"
+                  },
+                  "length": {
+                    "type": "string",
+                    "description": "Longitud del paquete"
+                  },
+                  "width": {
+                    "type": "string",
+                    "description": "Ancho del paquete"
+                  },
+                  "height": {
+                    "type": "string",
+                    "description": "Altura del paquete"
+                  },
+                  "consignment_note": {
+                    "type": "string",
+                    "description": "Carta porte ID"
+                  },
+                  "tracking_url_provider": {
+                    "type": "string",
+                    "description": "URL de seguimiento"
+                  },
+                  "tracking_status": {
+                    "type": "string",
+                    "nullable": true,
+                    "tracking_status": "created",
+                    "description": "Estado de seguimiento"
+                  },
+                  "tracking_number": {
+                    "type": "string",
+                    "description": "Número de seguimiento"
+                  },
+                  "label_url": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "URL de la guía"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "description": "Fecha de creación"
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "description": "Fecha de actualización"
+                  }
+                }
+              },
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "shipment": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "UUID de la dirección"
+                  },
+                  "area_level1": {
+                    "type": "string",
+                    "description": "Estado, provincia o departamento de la dirección"
+                  },
+                  "area_level2": {
+                    "type": "string",
+                    "description": "Ciudad o municipio de la dirección"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Nombre del destinatario o remitente"
+                  },
+                  "postal_code": {
+                    "type": "string",
+                    "description": "Código postal de la dirección"
+                  },
+                  "country_code": {
+                    "type": "string",
+                    "description": "Código de país de la dirección"
+                  },
+                  "address_type": {
+                    "type": "string",
+                    "description": "Tipo de dirección"
+                  },
+                  "street1": {
+                    "type": "string",
+                    "description": "Calle y número de la dirección"
+                  },
+                  "company": {
+                    "type": "string",
+                    "description": "Nombre de la empresa"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "description": "Número de teléfono"
+                  },
+                  "email": {
+                    "type": "string",
+                    "description": "Correo electrónico"
+                  },
+                  "reference": {
+                    "type": "string",
+                    "description": "Referencia de la dirección"
+                  },
+                  "area_level3": {
+                    "type": "string",
+                    "description": "Barrio o colonia de la dirección"
+                  },
+                  "apartment_number": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Número de departamento"
+                  }
+                }
+              },
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "shipment": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "current_page": {
+          "type": "integer"
+        },
+        "next_page": {
+          "type": "integer",
+          "nullable": true
+        },
+        "prev_page": {
+          "type": "integer",
+          "nullable": true
+        },
+        "total_pages": {
+          "type": "integer"
+        },
+        "total_count": {
+          "type": "integer"
+        }
+      }
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "data": {
+      "items": {
+        "properties": {
+          "id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+          "type": {
+          },
+          "attributes": {
+            "properties": {
+              "id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+              "carrier_name": "fedex",
+              "workflow_status": "pending",
+              "payment_status": "paid",
+              "total": "38.20",
+              "source": "api",
+              "carrier_id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+              "service_id": "standart_overnight",
+              "master_tracking_number": "234234234233",
+              "created_at": {
+              },
+              "updated_at": {
+              }
+            }
+          },
+          "relationships": {
+            "properties": {
+              "packages": {
+                "properties": {
+                  "data": {
+                    "items": {
+                      "properties": {
+                        "id": {
+                        },
+                        "type": {
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "address_from": {
+                "properties": {
+                  "data": {
+                    "properties": {
+                      "id": {
+                      },
+                      "type": {
+                      }
+                    }
+                  }
+                }
+              },
+              "address_to": {
+                "properties": {
+                  "data": {
+                    "properties": {
+                      "id": {
+                      },
+                      "type": {
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "included": {
+      "items": {
+        "oneOf": [
+          {
+            "properties": {
+              "id": {
+              },
+              "type": {
+              },
+              "attributes": {
+                "properties": {
+                  "id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+                  "package_type": "4G",
+                  "weight": 1,
+                  "length": 1,
+                  "width": 1,
+                  "height": 1,
+                  "consignment_note": 53102400,
+                  "tracking_url_provider": "https://www.fedex.com/fedextrack/?trknbr=234234234233",
+                  "tracking_status": {
+                  },
+                  "tracking_number": 123123123123,
+                  "label_url": "https://label.com",
+                  "created_at": {
+                  },
+                  "updated_at": {
+                  }
+                }
+              },
+              "relationships": {
+                "properties": {
+                  "shipment": {
+                    "properties": {
+                      "data": {
+                        "properties": {
+                          "id": {
+                          },
+                          "type": {
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "id": {
+              },
+              "type": {
+              },
+              "attributes": {
+                "properties": {
+                  "id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+                  "area_level1": "Ciudad de México",
+                  "area_level2": "Venustiano Carranza",
+                  "name": "Juan",
+                  "postal_code": "15400",
+                  "country_code": "MX",
+                  "address_type": "to",
+                  "street1": "Persia 143",
+                  "company": "Company name",
+                  "phone": "3453453453453",
+                  "email": "juan@mail.com",
+                  "reference": "porton",
+                  "area_level3": "Romero rubio",
+                  "apartment_number": {
+                  }
+                }
+              },
+              "relationships": {
+                "properties": {
+                  "shipment": {
+                    "properties": {
+                      "data": {
+                        "properties": {
+                          "id": {
+                          },
+                          "type": {
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "meta": {
+      "properties": {
+        "current_page": 2,
+        "next_page": 3,
+        "prev_page": 1,
+        "total_pages": 3,
+        "total_count": 8
+      }
+    }
+  }
+}
+/api/v1/shipments/{id}
+GET
+Resumen: Recupera un envío
+
+Descripción:
+Recupera un envío
+
+Parámetros:
+id path
+Required
+Type:
+string
+Curl
+Ruby
+Node
+Php
+Python
+curl -X GET 'https://pro.skydropx.com/api/v1/shipments/example_id' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer {{BEARER_TOKEN}}' 
+        
+Probar
+Respuestas:
+Código: 200
+Descripción:
+Retorna un envío
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "type": {
+          "type": "string"
+        },
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "UUID del envío"
+            },
+            "carrier_name": {
+              "type": "string",
+              "description": "Nombre de la paquetería"
+            },
+            "workflow_status": {
+              "type": "string",
+              "description": "Estado del envío"
+            },
+            "payment_status": {
+              "type": "string",
+              "description": "Estado del pago"
+            },
+            "total": {
+              "type": "string",
+              "description": "Costo total del envío"
+            },
+            "source": {
+              "type": "string",
+              "description": "Origen del envío (Api `api`)"
+            },
+            "carrier_id": {
+              "type": "string",
+              "nullable": true,
+              "description": "UUID de la paquetería"
+            },
+            "service_id": {
+              "type": "string",
+              "nullable": true,
+              "description": "UUID del servicio"
+            },
+            "master_tracking_number": {
+              "type": "string",
+              "nullable": true,
+              "description": "Número de rastreo"
+            },
+            "created_at": {
+              "type": "string",
+              "description": "Fecha de creación"
+            },
+            "updated_at": {
+              "type": "string",
+              "description": "Fecha de actualización"
+            }
+          }
+        },
+        "relationships": {
+          "type": "object",
+          "properties": {
+            "packages": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "address_from": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "address_to": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "included": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "UUID del paquete"
+                  },
+                  "package_type": {
+                    "type": "string",
+                    "description": "Tipo de paquete"
+                  },
+                  "weight": {
+                    "type": "string",
+                    "description": "Peso del paquete"
+                  },
+                  "length": {
+                    "type": "string",
+                    "description": "Longitud del paquete"
+                  },
+                  "width": {
+                    "type": "string",
+                    "description": "Ancho del paquete"
+                  },
+                  "height": {
+                    "type": "string",
+                    "description": "Altura del paquete"
+                  },
+                  "consignment_note": {
+                    "type": "string",
+                    "description": "Carta porte ID"
+                  },
+                  "tracking_url_provider": {
+                    "type": "string",
+                    "description": "URL de seguimiento"
+                  },
+                  "tracking_status": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Estado de seguimiento"
+                  },
+                  "tracking_number": {
+                    "type": "string",
+                    "description": "Número de seguimiento"
+                  },
+                  "label_url": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "URL de la guía"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "description": "Fecha de creación"
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "description": "Fecha de actualización"
+                  }
+                }
+              },
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "shipment": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "UUID de la dirección"
+                  },
+                  "area_level1": {
+                    "type": "string",
+                    "description": "Estado, provincia o departamento de la dirección"
+                  },
+                  "area_level2": {
+                    "type": "string",
+                    "description": "Ciudad o municipio de la dirección"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Nombre del destinatario o remitente"
+                  },
+                  "postal_code": {
+                    "type": "string",
+                    "description": "Código postal de la dirección"
+                  },
+                  "country_code": {
+                    "type": "string",
+                    "description": "Código de país de la dirección"
+                  },
+                  "address_type": {
+                    "type": "string",
+                    "description": "Tipo de dirección"
+                  },
+                  "street1": {
+                    "type": "string",
+                    "description": "Calle y número de la dirección"
+                  },
+                  "company": {
+                    "type": "string",
+                    "description": "Nombre de la empresa"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "description": "Número de teléfono"
+                  },
+                  "email": {
+                    "type": "string",
+                    "description": "Correo electrónico"
+                  },
+                  "reference": {
+                    "type": "string",
+                    "description": "Referencia de la dirección"
+                  },
+                  "area_level3": {
+                    "type": "string",
+                    "description": "Barrio o colonia de la dirección"
+                  },
+                  "apartment_number": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Número de departamento"
+                  }
+                }
+              },
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "shipment": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "data": {
+      "properties": {
+        "id": {
+        },
+        "type": {
+        },
+        "attributes": {
+          "properties": {
+            "id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+            "carrier_name": "FEDEX",
+            "workflow_status": "success",
+            "payment_status": "paid",
+            "total": "500.0",
+            "source": "api",
+            "carrier_id": "91dd6bde-fd08-4bf2-b12d-d79c98b0f7ab",
+            "service_id": "91dd6bde-fd08-4bf2-b12d-d79c98b0f7ab",
+            "master_tracking_number": "234234234233",
+            "created_at": {
+            },
+            "updated_at": {
+            }
+          }
+        },
+        "relationships": {
+          "properties": {
+            "packages": {
+              "properties": {
+                "data": {
+                  "items": {
+                    "properties": {
+                      "id": {
+                      },
+                      "type": {
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "address_from": {
+              "properties": {
+                "data": {
+                  "properties": {
+                    "id": {
+                    },
+                    "type": {
+                    }
+                  }
+                }
+              }
+            },
+            "address_to": {
+              "properties": {
+                "data": {
+                  "properties": {
+                    "id": {
+                    },
+                    "type": {
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "included": {
+      "items": {
+        "oneOf": [
+          {
+            "properties": {
+              "id": {
+              },
+              "type": {
+              },
+              "attributes": {
+                "properties": {
+                  "id": "91dd6bde-fd08-4bf2-b12d-d79c98b0f7ab",
+                  "package_type": "4G",
+                  "weight": "1",
+                  "length": "1",
+                  "width": "1",
+                  "height": "1",
+                  "consignment_note": "53102400",
+                  "tracking_url_provider": "https://www.fedex.com/fedextrack/?trknbr=234234234233",
+                  "tracking_status": "created",
+                  "tracking_number": 234234234233,
+                  "label_url": "https://label.com",
+                  "created_at": {
+                  },
+                  "updated_at": {
+                  }
+                }
+              },
+              "relationships": {
+                "properties": {
+                  "shipment": {
+                    "properties": {
+                      "data": {
+                        "properties": {
+                          "id": {
+                          },
+                          "type": {
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "id": {
+              },
+              "type": {
+              },
+              "attributes": {
+                "properties": {
+                  "id": "91dd6bde-fd08-4bf2-b12d-d79c98b0f7ab",
+                  "area_level1": "Ciudad de México",
+                  "area_level2": "Venustiano Carranza",
+                  "name": "Juan",
+                  "postal_code": "15400",
+                  "country_code": "MX",
+                  "address_type": "to",
+                  "street1": "Persia 143",
+                  "company": "Company name",
+                  "phone": "3453453453453",
+                  "email": "juan@mail.com",
+                  "reference": "porton",
+                  "area_level3": "Romero rubio",
+                  "apartment_number": {
+                  }
+                }
+              },
+              "relationships": {
+                "properties": {
+                  "shipment": {
+                    "properties": {
+                      "data": {
+                        "properties": {
+                          "id": {
+                          },
+                          "type": {
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+Código: 404
+Descripción:
+Retorna un mensaje de no encontrado
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "message": {
+      "type": "string"
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "message": "El recurso buscado no se pudo encontrar."
+  }
+}
+/api/v1/shipments/
+POST
+Resumen: Crea un envío
+
+Descripción:
+Este endpoint permite crear un envío, usando la cotización creada (POST /api/v1/quotations) y obtenida previamente (GET /api/v1/quotations/{id}).
+
+Ejemplo de Cuerpo de Solicitud: Envío nacional
+Content-Type: application/json
+Object:
+shipment
+Object:
+rate_idRequired
+Type: string
+Id único del precio obtenido al consultar la cotización (GET /api/v1/quotations/{id}).
+Example
+printing_format
+Type: string
+Formato de impresión de la guía, puede ser `standard` o `thermal`.
+Example
+address_fromRequired
+Object:
+street1Required
+Type: string
+Calle y número de la dirección.
+Example
+nameRequired
+Type: string
+Nombre completo del remitente.
+Example
+companyRequired
+Type: string
+Nombre de la empresa.
+Example
+phoneRequired
+Type: string
+Número de teléfono.
+Example
+emailRequired
+Type: string
+Correo electrónico.
+Example
+referenceRequired
+Type: string
+Referencia de la dirección.
+Example
+address_toRequired
+Object:
+street1Required
+Type: string
+Calle y número de la dirección.
+Example
+nameRequired
+Type: string
+Nombre completo del destinatario.
+Example
+companyRequired
+Type: string
+Nombre de la empresa.
+Example
+phoneRequired
+Type: string
+Número de teléfono.
+Example
+emailRequired
+Type: string
+Correo electrónico.
+Example
+reference
+Type: string
+Referencia de la dirección.
+Example
+packagesRequired
+Array of:
+Object:
+package_number
+Type: string
+Número de índice del paquete cotizado.
+Example
+package_protected
+Type: boolean
+Si tiene seguro se pone true, si no tiene agrega false.
+Example
+declared_value
+Type: number
+Si tiene seguro se pone el valor a asegurar, ejemplo 500. El valor está en pesos mexicanos.
+Example
+consignment_note
+Type: string
+Carta porte ID
+Example
+package_type
+Type: string
+Tipo de paquete
+Example
+products
+Array of:
+Object:
+product_id
+Type: string
+ID del producto
+Example
+name
+Type: string
+Nombre del producto
+Example
+description_en
+Type: string
+Descripción en inglés
+Example
+quantity
+Type: integer
+Cantidad
+Example
+price
+Type: number
+Precio en pesos mexicanos
+Example
+sku
+Type: string
+SKU
+Example
+hs_code
+Type: string
+Código Harmonizado
+Example
+hs_code_description
+Type: string
+Descripción del código Harmonizado
+Example
+product_type_code
+Type: string
+Código de tipo de producto
+Example
+product_type_name
+Type: string
+Nombre del tipo de producto
+Example
+country_code
+Type: string
+Código de país en ISO 3166-1 alpha-2
+Example
+Ejemplo de Cuerpo de Solicitud: Envío internacional
+Content-Type: application/json
+Object:
+shipment
+Object:
+rate_idRequired
+Type: string
+Id único del precio obtenido al consultar la cotización (GET /api/v1/quotations/{id}).
+Example
+customs_payment_payerRequired
+Type: string
+Entidad que pagará los aranceles del envío. Puede ser `sender` o `recipient`.
+Example
+shipment_purposeRequired
+Type: string
+Propósito del envío (`goods`, `documents`, `sample`, `return_of_goods`, `gift` o `humanitarian_donation`).
+Example
+printing_format
+Type: string
+Formato de impresión de la guía, puede ser `standard` o `thermal`.
+Example
+address_fromRequired
+Object:
+street1Required
+Type: string
+Calle y número de la dirección.
+Example
+nameRequired
+Type: string
+Nombre completo del remitente.
+Example
+companyRequired
+Type: string
+Nombre de la empresa.
+Example
+phoneRequired
+Type: string
+Número de teléfono.
+Example
+emailRequired
+Type: string
+Correo electrónico.
+Example
+referenceRequired
+Type: string
+Referencia de la dirección.
+Example
+address_toRequired
+Object:
+street1Required
+Type: string
+Calle y número de la dirección.
+Example
+nameRequired
+Type: string
+Nombre completo del destinatario.
+Example
+companyRequired
+Type: string
+Nombre de la empresa.
+Example
+phoneRequired
+Type: string
+Número de teléfono.
+Example
+emailRequired
+Type: string
+Correo electrónico.
+Example
+reference
+Type: string
+Referencia de la dirección.
+Example
+packagesRequired
+Array of:
+Object:
+package_number
+Type: string
+Número de índice del paquete cotizado.
+Example
+package_protected
+Type: boolean
+Si tiene seguro se pone true, si no tiene agrega false.
+Example
+declared_value
+Type: number
+Si tiene seguro se pone el valor a asegurar, ejemplo 500. El valor está en pesos mexicanos.
+Example
+consignment_note
+Type: string
+Carta porte ID
+Example
+package_type
+Type: string
+Tipo de paquete
+Example
+products
+Array of:
+Object:
+product_id
+Type: string
+ID del producto
+Example
+name
+Type: string
+Nombre del producto
+Example
+description_en
+Type: string
+Descripción en inglés
+Example
+quantity
+Type: integer
+Cantidad
+Example
+price
+Type: number
+Precio en pesos mexicanos
+Example
+sku
+Type: string
+SKU
+Example
+hs_code
+Type: string
+Código Harmonizado
+Example
+hs_code_description
+Type: string
+Descripción del código Harmonizado
+Example
+product_type_code
+Type: string
+Código de tipo de producto
+Example
+product_type_name
+Type: string
+Nombre del tipo de producto
+Example
+country_code
+Type: string
+Código de país en ISO 3166-1 alpha-2
+Example
+Curl
+Ruby
+Node
+Php
+Python
+curl -X POST 'https://pro.skydropx.com/api/v1/shipments/' \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer {{BEARER_TOKEN}}' 
+        
+Probar
+Respuestas:
+Código: 202
+Descripción:
+Retorna el envío creado
+
+Esquema:
+{
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "UUID del envío"
+        },
+        "type": {
+          "type": "string",
+          "description": "Tipo de envío"
+        },
+        "attributes": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "description": "UUID del envío"
+            },
+            "carrier_name": {
+              "type": "string",
+              "description": "Nombre de la paquetería"
+            },
+            "workflow_status": {
+              "type": "string",
+              "description": "Estado del envío"
+            },
+            "payment_status": {
+              "type": "string",
+              "description": "Estado del pago"
+            },
+            "total": {
+              "type": "string",
+              "description": "Costo total del envío"
+            },
+            "source": {
+              "type": "string",
+              "description": "Origen del envío (Api `api`)"
+            },
+            "carrier_id": {
+              "type": "string",
+              "nullable": true,
+              "description": "UUID de la paquetería"
+            },
+            "service_id": {
+              "type": "string",
+              "nullable": true,
+              "description": "UUID del servicio"
+            },
+            "master_tracking_number": {
+              "type": "string",
+              "nullable": true,
+              "description": "Número de rastreo"
+            },
+            "created_at": {
+              "type": "string",
+              "description": "Fecha de creación"
+            },
+            "updated_at": {
+              "type": "string",
+              "description": "Fecha de actualización"
+            }
+          }
+        },
+        "relationships": {
+          "type": "object",
+          "properties": {
+            "packages": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "address_from": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "address_to": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "included": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "UUID del paquete"
+                  },
+                  "package_type": {
+                    "type": "string",
+                    "description": "Tipo de paquete"
+                  },
+                  "weight": {
+                    "type": "string",
+                    "description": "Peso del paquete"
+                  },
+                  "length": {
+                    "type": "string",
+                    "description": "Longitud del paquete"
+                  },
+                  "width": {
+                    "type": "string",
+                    "description": "Ancho del paquete"
+                  },
+                  "height": {
+                    "type": "string",
+                    "description": "Altura del paquete"
+                  },
+                  "consignment_note": {
+                    "type": "string",
+                    "description": "Carta porte ID"
+                  },
+                  "tracking_url_provider": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "URL de seguimiento"
+                  },
+                  "tracking_status": {
+                    "type": "string",
+                    "nullable": true,
+                    "tracking_status": "created",
+                    "description": "Estado de seguimiento"
+                  },
+                  "tracking_number": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Número de seguimiento"
+                  },
+                  "label_url": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "URL de la guía"
+                  },
+                  "created_at": {
+                    "type": "string",
+                    "description": "Fecha de creación"
+                  },
+                  "updated_at": {
+                    "type": "string",
+                    "description": "Fecha de actualización"
+                  }
+                }
+              },
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "shipment": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              },
+              "attributes": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "UUID de la dirección"
+                  },
+                  "area_level1": {
+                    "type": "string",
+                    "description": "Estado, provincia o departamento de la dirección"
+                  },
+                  "area_level2": {
+                    "type": "string",
+                    "description": "Ciudad o municipio de la dirección"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Nombre del destinatario o remitente"
+                  },
+                  "postal_code": {
+                    "type": "string",
+                    "description": "Código postal de la dirección"
+                  },
+                  "country_code": {
+                    "type": "string",
+                    "description": "Código de país de la dirección"
+                  },
+                  "address_type": {
+                    "type": "string",
+                    "description": "Tipo de dirección"
+                  },
+                  "street1": {
+                    "type": "string",
+                    "description": "Calle y número de la dirección"
+                  },
+                  "company": {
+                    "type": "string",
+                    "description": "Nombre de la empresa"
+                  },
+                  "phone": {
+                    "type": "string",
+                    "description": "Número de teléfono"
+                  },
+                  "email": {
+                    "type": "string",
+                    "description": "Correo electrónico"
+                  },
+                  "reference": {
+                    "type": "string",
+                    "description": "Referencia de la dirección"
+                  },
+                  "area_level3": {
+                    "type": "string",
+                    "description": "Barrio o colonia de la dirección"
+                  },
+                  "apartment_number": {
+                    "type": "string",
+                    "nullable": true,
+                    "description": "Número de departamento"
+                  }
+                }
+              },
+              "relationships": {
+                "type": "object",
+                "properties": {
+                  "shipment": {
+                    "type": "object",
+                    "properties": {
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+Ejemplo:
+{
+  "properties": {
+    "data": {
+      "properties": {
+        "id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+        "type": {
+        },
+        "attributes": {
+          "properties": {
+            "id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+            "carrier_name": "fedex",
+            "workflow_status": "pending",
+            "payment_status": "paid",
+            "total": "38.20",
+            "source": "api",
+            "carrier_id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+            "service_id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+            "master_tracking_number": "1234567890",
+            "created_at": {
+            },
+            "updated_at": {
+            }
+          }
+        },
+        "relationships": {
+          "properties": {
+            "packages": {
+              "properties": {
+                "data": {
+                  "items": {
+                    "properties": {
+                      "id": {
+                      },
+                      "type": {
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "address_from": {
+              "properties": {
+                "data": {
+                  "properties": {
+                    "id": {
+                    },
+                    "type": {
+                    }
+                  }
+                }
+              }
+            },
+            "address_to": {
+              "properties": {
+                "data": {
+                  "properties": {
+                    "id": {
+                    },
+                    "type": {
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "included": {
+      "items": {
+        "oneOf": [
+          {
+            "properties": {
+              "id": {
+              },
+              "type": {
+              },
+              "attributes": {
+                "properties": {
+                  "id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+                  "package_type": "4G",
+                  "weight": 1,
+                  "length": 1,
+                  "width": 1,
+                  "height": 1,
+                  "consignment_note": 53102400,
+                  "tracking_url_provider": "https://www.fedex.com/fedextrack/?trknbr=234234234233",
+                  "tracking_status": {
+                  },
+                  "tracking_number": 123123123123,
+                  "label_url": "https://label.com",
+                  "created_at": {
+                  },
+                  "updated_at": {
+                  }
+                }
+              },
+              "relationships": {
+                "properties": {
+                  "shipment": {
+                    "properties": {
+                      "data": {
+                        "properties": {
+                          "id": {
+                          },
+                          "type": {
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "id": {
+              },
+              "type": {
+              },
+              "attributes": {
+                "properties": {
+                  "id": "0ac5adcc-a13d-427d-81dd-9ddd70b2f660",
+                  "area_level1": "Ciudad de México",
+                  "area_level2": "Venustiano Carranza",
+                  "name": "Juan",
+                  "postal_code": "15400",
+                  "country_code": "MX",
+                  "address_type": "to",
+                  "street1": "Persia 143",
+                  "company": "Company name",
+                  "phone": "3453453453453",
+                  "email": "juan@mail.com",
+                  "reference": "porton",
+                  "area_level3": "Romero rubio",
+                  "apartment_number": {
+                  }
+                }
+              },
+              "relationships": {
+                "properties": {
+                  "shipment": {
+                    "properties": {
+                      "data": {
+                        "properties": {
+                          "id": {
+                          },
+                          "type": {
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+Código: 422
+Descripción:
+Retorna una respuesta de error
+
+Webhooks
+Descripción general:
+Los webhooks permiten que servicios externos reciban actualizaciones en tiempo real desde nuestra aplicación. Este cliente es responsable de enviar notificaciones cuando ocurren eventos específicos en nuestro sistema.
+Solicita la sección para configurar webhooks en plataforma escribiendo a hola@skydropx.com
+Encabezados de la solicitud
+El nombre del encabezado de autenticación puede configurarse dinámicamente. Por defecto, se utiliza Authorization, pero puede asignarse cualquier nombre que cumpla con las siguientes condiciones:
+Contener entre 3 y 25 caracteres.
+No incluir espacios.
+1. Autenticación con Bearer Token (menos segura):
+
+Authorization: Bearer <token> (token proporcionado por nosotros)
+Content-Type: application/json
+2. Autenticación HMAC (recomendada):
+
+Authorization: HMAC <firma>
+Content-Type: application/json
+La firma se genera utilizando el algoritmo HMAC con la función hash SHA-512, como se define en el RFC 6234, usando tu clave secreta. El HMAC se calcula sobre el cuerpo crudo de la solicitud (bytes exactos, sin formato) y se codifica como una cadena hexadecimal en minúsculas.
+
+Cuerpo de la solicitud
+El cuerpo de la solicitud contiene información relevante sobre el evento notificado.
+• Ejemplo de envíos con orden:
+
+{
+  "data": {
+    "id": "6172eb82-7b0b-4852-9954-b1ac1c20e4f8",
+    "type": "packages",
+    "attributes": {
+      "status": "delivered",
+      "tracking_number": "794874381730",
+      "tracking_url_provider": "https://www.fedex.com/fedextrack/?trknbr=794874381730",
+      "label_url": "https://api.example.com/cloud/storage/blobs/proxy/30a9d3/label_794874381730.pdf"
+    },
+    "relationships": {
+      "shipment": {
+        "data": {
+          "id": "93774c22-8275-4757-9963-71b79b2e8db7",
+          "type": "shipments"
+        },
+        "links": {
+          "related": "https://api.example.com/api/v1/shipments/93774c22-8275-4757-9963-71b79b2e8db7"
+        }
+      },
+      "order": {
+        "data": {
+          "id": "41ae1bf9-bccf-47dd-ba85-053b42f530c2",
+          "type": "orders"
+        },
+        "links": {
+          "related": "https://api.example.com/api/v1/orders/41ae1bf9-bccf-47dd-ba85-053b42
+        }
+      }
+    }
+  }
+}
+• Ejemplo de envíos sin orden:
+
+{
+  "data": {
+    "id": "6172eb82-7b0b-4852-9954-b1ac1c20e4f8",
+    "type": "packages",
+    "attributes": {
+      "status": "delivered",
+      "tracking_number": "794874381730",
+      "tracking_url_provider": "https://www.fedex.com/fedextrack/?trknbr=794874381730",
+      "label_url": "https://api.example.com/cloud/storage/blobs/proxy/30a9d3/label_794874381730.pdf"
+    },
+    "relationships": {
+      "shipment": {
+        "data": {
+          "id": "93774c22-8275-4757-9963-71b79b2e8db7",
+          "type": "shipments"
+        },
+        "links": {
+          "related": "https://api.example.com/api/v1/shipments/93774c22-8275-4757-9963-71b79b2e8db7"
+        }
+      }
+    }
+  }
+}
+• Ejemplo de órdenes:
+
+{
+  "data": {
+    "id": "1f92595c-1ba5-40f8-a52b-4788db608293",
+    "type": "orders",
+    "attributes": {
+      "status": "sent",
+      "platform": "shopify",
+      "platform_id": "69b24c26-00f0-4099-90cc-a5c8b26d9bfa",
+      "ecommerce_id: "2d3afffd-ce69-4aa5-ae80-549487d8d5c5",
+      "price": 10_000,
+      "payment_status": 'paid'
+    },
+    "links": {
+      "self": "https://api.example.com/api/v1/orders/1f92595c-1ba5-40f8-a52b-4788db608293"
+    }
+  }
+}
+Métodos de autenticación
+1. Autenticación con Bearer Token
+
+Utiliza el token estático proporcionado para una autenticación sencilla (menos segura).
+
+2. Autenticación HMAC (Recomendada)
+
+Crear la cadena de firma: raw_request_body.
+Calcular HMAC-SHA512 utilizando tu clave secreta.
+Enviar la firma en el encabezado Authorization.
+Información adicional
+Por razones de privacidad, no podemos compartir toda la información directamente en el webhook. Sin embargo, los clientes pueden hacer una solicitud adicional a la API usando los enlaces proporcionados en el cuerpo de la respuesta para obtener los detalles completos del evento.
+Para la documentación completa de la API:
+Envíos: Documentación de envíos
+Órdenes: Documentación de órdenes
+Seguridad
+Asegúrate de que tu URL de webhook use HTTPS.
+1. Para autenticación con Bearer Token:
+
+Trata el token como credenciales sensibles.
+Rota los tokens periódicamente.
+Valida todas las solicitudes entrantes antes de procesarlas.
+2. Para autenticación HMAC:
+
+Almacena tu clave secreta de forma segura.
+Contacto y soporte
+Para preguntas o problemas, por favor contacta a nuestro equipo de soporte en: hola@skydropx.com
