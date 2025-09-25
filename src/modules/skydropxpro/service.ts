@@ -103,25 +103,33 @@ class SkydropxProService extends MedusaService({
             return null
         }
 
-        let data = JSON.stringify({
-        "grant_type": "client_credentials",
-        "client_id": this.options_.apiKey,
-        "client_secret": this.options_.apiSecret
-        });
+        const body = new URLSearchParams({
+            grant_type: 'client_credentials',
+            client_id: this.options_.apiKey,
+            client_secret: this.options_.apiSecret
+        })
 
-        let config = {
-        method: 'post',
-        maxBodyLength: Infinity,
-        url: this.options_.apiUrl + "/oauth/token",
-        headers: { 
-            'Content-Type': 'application/json'
-        },
-        data : data
-        };
+        const config = {
+            method: 'post',
+            maxBodyLength: Infinity,
+            url: this.options_.apiUrl + "/oauth/token",
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/json'
+            },
+            data: body.toString()
+        }
 
         try {
             const response = await axios.request(config)
-            return response.data.access_token
+            const token = response.data?.access_token
+
+            if (typeof token !== 'string' || token.length === 0) {
+                this.logger_.error('[SkydropxProService.authenticate] Missing access_token in response')
+                return null
+            }
+
+            return token
         } catch (error) {
             return this.handleApiError(error, 'authenticate')
         }
@@ -133,7 +141,9 @@ class SkydropxProService extends MedusaService({
      */
     async getQuotations(data: any){
         const token = await this.authenticate()
-        if (!token) {
+
+        if (!token || typeof token !== 'string') {
+            this.logger_.error(`[SkydropxProService.getQuotations] Invalid token received: ${JSON.stringify(token)}`)
             return this.handleApiError({ message: 'Authentication failed' }, 'getQuotations')
         }
 
@@ -163,7 +173,8 @@ class SkydropxProService extends MedusaService({
      */
     async getQuotationById(id: string){
         const token = await this.authenticate()
-        if (!token) {
+        if (!token || typeof token !== 'string') {
+            this.logger_.error(`[SkydropxProService.getQuotationById] Invalid token received: ${JSON.stringify(token)}`)
             return this.handleApiError({ message: 'Authentication failed' }, 'getQuotationById')
         }
 
@@ -367,16 +378,33 @@ class SkydropxProService extends MedusaService({
                 }
                 
                 const requestData = {
-                    quotation:{
+                    quotation: {
                         address_from: origin,
                         address_to: destination,
                         parcels: [packageDetails],
                         requested_carriers: requestedCarriers
-                    } 
+                    }
                 }
-                
+
+                const isInternational = origin.country_code !== destination.country_code
+
+                if (isInternational) {
+                    requestData.quotation.products = (items as any[]).map((item: any, index: number) => {
+                        const hsCode = item.variant?.product?.hs_code || item.product_description || '0000000000'
+                        const description = item.product_description || item.title || `Item ${index + 1}`
+
+                        return {
+                            hs_code: String(hsCode).padStart(10, '0').slice(0, 10),
+                            description_en: description,
+                            country_code: item.variant?.product?.origin_country || 'MX',
+                            quantity: item.quantity || 1,
+                            price: item.unit_price || 0
+                        }
+                    })
+                }
+
                 this.logger_.info(`[SkydropxProService] Requesting quotation for warehouse ${warehouseId} with data: ${JSON.stringify(requestData)}`)
-                
+
                 let response = null
                 const previousQuotation = await this.getQuotations(requestData)
                 

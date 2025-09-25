@@ -1,10 +1,3 @@
-Bienvenido a nuestra documentación de integraciones!
-Podrás automatizar envíos y procesos, sincronizar las órdenes de tiendas online; programar recolecciones, configurar impresión, rastrear los movimientos de tus envíos y protegerlos.
-
-Credenciales
-Guía rápida: crea un envío
-Guía rápida: crea un envío internacional
-Guía rápida: crea un envío con múltiples paquetes
 Busca las credenciales y conecta con nuestra API
 Simplifica tu integración, elige el ambiente y empieza a usar nuestra API en minutos…
 
@@ -526,6 +519,9 @@ Esquema:
             "id": {
               "type": "string"
             },
+            "reference": {
+              "type": "string"
+            },
             "platform": {
               "type": [
                 "string",
@@ -831,6 +827,8 @@ Ejemplo:
         "attributes": {
           "properties": {
             "id": "9e270243-762f-40c8-833e-ef1c4ee8282d",
+            "reference": {
+            },
             "platform": "Shopify",
             "ecommerce_id": "SDFG",
             "price": "10.0",
@@ -1502,6 +1500,9 @@ Esquema:
             "id": {
               "type": "string"
             },
+            "reference": {
+              "type": "string"
+            },
             "platform": {
               "type": [
                 "string",
@@ -1807,6 +1808,8 @@ Ejemplo:
         "attributes": {
           "properties": {
             "id": "9e270243-762f-40c8-833e-ef1c4ee8282d",
+            "reference": {
+            },
             "platform": "Shopify",
             "ecommerce_id": "SDFG",
             "price": "10.0",
@@ -3649,8 +3652,8 @@ Ejemplo:
               "height": 4,
               "length": 4,
               "price": 4.5,
-              "created_at": "2025-02-06 20:26:41 -0600",
-              "updated_at": "2025-02-06 20:26:41 -0600",
+              "created_at": "2025-02-06 21:26:41 -0500",
+              "updated_at": "2025-02-06 21:26:41 -0500",
               "country_id": "f12f8764-1ee7-48c7-94b3-3f5a4e610e5b",
               "product_type_code": 31261500,
               "product_type_name": "Producto 1",
@@ -3961,6 +3964,10 @@ Esquema:
             "type": "string",
             "description": "Nombre de la paquetería."
           },
+          "provider_display_name": {
+            "type": "string",
+            "description": "Nombre para mostrar de la paquetería."
+          },
           "provider_service_name": {
             "type": "string",
             "description": "Nombre del servicio de la paquetería."
@@ -4039,6 +4046,10 @@ Esquema:
             "type": "string",
             "nullable": true,
             "description": "Tipo de plan."
+          },
+          "packaging_type": {
+            "type": "string",
+            "description": "Indica el tipo de embalaje requerido para el envío, ya sea caja (Package) o tarima (Pallet)."
           }
         }
       }
@@ -4118,6 +4129,7 @@ Ejemplo:
           },
           "country_code": "mx",
           "provider_name": "fedex",
+          "provider_display_name": "FedEx",
           "provider_service_name": "Standard Overnight",
           "provider_service_code": "standard_overnight",
           "status": "pending",
@@ -4148,6 +4160,8 @@ Ejemplo:
           "zone": {
           },
           "plan_type": {
+          },
+          "packaging_type": {
           }
         }
       }
@@ -4504,6 +4518,10 @@ Esquema:
             "type": "string",
             "description": "Nombre de la paquetería."
           },
+          "provider_display_name": {
+            "type": "string",
+            "description": "Nombre para mostrar de la paquetería."
+          },
           "provider_service_name": {
             "type": "string",
             "description": "Nombre del servicio de la paquetería."
@@ -4582,6 +4600,10 @@ Esquema:
             "type": "string",
             "nullable": true,
             "description": "Tipo de plan."
+          },
+          "packaging_type": {
+            "type": "string",
+            "description": "Indica el tipo de embalaje requerido para el envío, ya sea caja (Package) o tarima (Pallet)."
           }
         }
       }
@@ -4657,6 +4679,7 @@ Ejemplo:
           },
           "country_code": "mx",
           "provider_name": "fedex",
+          "provider_display_name": "FedEx",
           "provider_service_name": "Standard Overnight",
           "provider_service_code": "standard_overnight",
           "status": "pending",
@@ -4687,6 +4710,8 @@ Ejemplo:
           "zone": {
           },
           "plan_type": {
+          },
+          "packaging_type": {
           }
         }
       }
@@ -6444,37 +6469,13 @@ Example
 products
 Array of:
 Object:
-product_id
-Type: string
-ID del producto
-Example
 name
 Type: string
 Nombre del producto
 Example
-description_en
-Type: string
-Descripción en inglés
-Example
-quantity
-Type: integer
-Cantidad
-Example
-price
-Type: number
-Precio en pesos mexicanos
-Example
 sku
 Type: string
 SKU
-Example
-hs_code
-Type: string
-Código Harmonizado
-Example
-hs_code_description
-Type: string
-Descripción del código Harmonizado
 Example
 product_type_code
 Type: string
@@ -6483,10 +6484,6 @@ Example
 product_type_name
 Type: string
 Nombre del tipo de producto
-Example
-country_code
-Type: string
-Código de país en ISO 3166-1 alpha-2
 Example
 Curl
 Ruby
@@ -7116,5 +7113,3 @@ Valida todas las solicitudes entrantes antes de procesarlas.
 2. Para autenticación HMAC:
 
 Almacena tu clave secreta de forma segura.
-Contacto y soporte
-Para preguntas o problemas, por favor contacta a nuestro equipo de soporte en: hola@skydropx.com
