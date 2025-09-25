@@ -377,30 +377,29 @@ class SkydropxProService extends MedusaService({
                     this.logger_.warn(`[SkydropxProService] Package weight ${packageWeight}kg - very heavy parts, may require special handling`)
                 }
                 
+                const isInternational = origin.country_code !== destination.country_code
+
                 const requestData = {
                     quotation: {
                         address_from: origin,
                         address_to: destination,
                         parcels: [packageDetails],
-                        requested_carriers: requestedCarriers
+                        requested_carriers: requestedCarriers,
+                        ...(isInternational && {
+                            products: (items as any[]).map((item: any, index: number) => {
+                                const hsCode = item.variant?.product?.hs_code || item.product_description || '0000000000'
+                                const description = item.product_description || item.title || `Item ${index + 1}`
+
+                                return {
+                                    hs_code: String(hsCode).padStart(10, '0').slice(0, 10),
+                                    description_en: description,
+                                    country_code: item.variant?.product?.origin_country || 'MX',
+                                    quantity: item.quantity || 1,
+                                    price: item.unit_price || 0
+                                }
+                            })
+                        })
                     }
-                }
-
-                const isInternational = origin.country_code !== destination.country_code
-
-                if (isInternational) {
-                    requestData.quotation.products = (items as any[]).map((item: any, index: number) => {
-                        const hsCode = item.variant?.product?.hs_code || item.product_description || '0000000000'
-                        const description = item.product_description || item.title || `Item ${index + 1}`
-
-                        return {
-                            hs_code: String(hsCode).padStart(10, '0').slice(0, 10),
-                            description_en: description,
-                            country_code: item.variant?.product?.origin_country || 'MX',
-                            quantity: item.quantity || 1,
-                            price: item.unit_price || 0
-                        }
-                    })
                 }
 
                 this.logger_.info(`[SkydropxProService] Requesting quotation for warehouse ${warehouseId} with data: ${JSON.stringify(requestData)}`)

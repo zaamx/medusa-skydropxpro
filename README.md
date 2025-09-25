@@ -64,7 +64,7 @@ Join our [Discord server](https://discord.com/invite/medusajs) to meet other com
 - [Medusa Blog](https://medusajs.com/blog/)
 
 node_modules/@medusajs/medusa/dist/commands/plugin/db/generate.js
--- npx medusa plugin:publish
+-- [npx medusa plugin:publish ]
 
 npx medusa plugin:db:generate
 
