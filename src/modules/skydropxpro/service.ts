@@ -2,6 +2,7 @@ import { MedusaService } from "@medusajs/framework/utils"
 import { Parcel, ParcelService } from "./models/skydropx"
 import { Logger } from "@medusajs/framework/types"
 import axios from "axios"
+import { createClient, SupabaseClient } from "@supabase/supabase-js"
 
 export type SkydropxProServiceOptions = {
   apiUrl: string,
@@ -102,6 +103,19 @@ export type SkydropxWarehouseRates = {
     rates: SkydropxCalculatedRate[]
 }
 
+const supabaseUrl = process.env.SUPABASE_URL || process.env.PUBLIC_SUPABASE_URL
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!supabaseUrl || !supabaseKey) {
+    throw new Error("Missing Supabase credentials")
+}
+
+const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey, {
+    auth: {
+        persistSession: false
+    }
+})
+
 class SkydropxProService extends MedusaService({
   Parcel,
   ParcelService
@@ -186,9 +200,9 @@ class SkydropxProService extends MedusaService({
         return {
             country_code: "MX",
             postal_code: resolvedPostalCode,
-            area_level1: process.env.STORE_STATE || '',
-            area_level2: process.env.STORE_MUNICIPALITY || '',
-            area_level3: process.env.STORE_SUBURB || '',
+            area_level1: process.env.STORE_STATE || 'N/A',
+            area_level2: process.env.STORE_MUNICIPALITY || 'N/A',
+            area_level3: process.env.STORE_SUBURB || 'N/A',
             street1: process.env.STORE_ADDRESS || '',
             internal_number: process.env.STORE_EXT_NUMBER || '',
             reference: process.env.STORE_REFERENCE || '',
@@ -222,11 +236,11 @@ class SkydropxProService extends MedusaService({
             ? address.province.trim()
             : typeof address.state === "string" && address.state.trim()
                 ? address.state.trim()
-                : fallback.area_level1
+                : fallback.area_level1 || "N/A"
 
         const city = typeof address.city === "string" && address.city.trim()
             ? address.city.trim()
-            : fallback.area_level2
+            : fallback.area_level2 || "N/A"
 
         const district = typeof address.district === "string" && address.district.trim()
             ? address.district.trim()
@@ -414,7 +428,17 @@ class SkydropxProService extends MedusaService({
         return 0
     }
 
-    calculatePackageDetails(items: any) {
+    private normaliseSku(rawSku: string | undefined): string | undefined {
+        if (!rawSku || typeof rawSku !== "string") {
+            return undefined
+        }
+
+        const [skuPart] = rawSku.split("||")
+        const trimmed = skuPart?.trim()
+        return trimmed && trimmed.length > 0 ? trimmed : undefined
+    }
+
+    async calculatePackageDetails(items: any) {
         if (!items || !Array.isArray(items) || items.length === 0) {
             this.logger_.warn('[SkydropxProService] No items provided for package calculation')
             return {
@@ -424,24 +448,102 @@ class SkydropxProService extends MedusaService({
                 weight: 1
             }
         }
+        console.log('items', items)
+
+        const uniqueSkus = Array.from(
+            new Set(
+                items
+                    .map((item) =>
+                        this.normaliseSku(
+                            item.variant_sku ||
+                            item.variant?.sku ||
+                            item.variant?.product?.sku
+                        )
+                    )
+                    .filter((sku): sku is string => Boolean(sku))
+            )
+        )
+
+        let productosMap: Record<string, { alto?: number; ancho?: number; largo?: number; peso?: number }> = {}
+        if (uniqueSkus.length > 0) {
+            try {
+                const { data, error } = await supabase
+                    .from('productos')
+                    .select('sku, alto, ancho, largo, peso')
+                    .in('sku', uniqueSkus)
+
+                if (error) {
+                    this.logger_.warn(`[SkydropxProService] Failed to fetch product dimensions from Supabase: ${error.message}`)
+                } else if (Array.isArray(data)) {
+                    productosMap = data.reduce<Record<string, { alto?: number; ancho?: number; largo?: number; peso?: number }>>((acc, producto) => {
+                        const sku = typeof producto?.sku === "string" ? producto.sku.trim() : undefined
+                        if (!sku) {
+                            return acc
+                        }
+
+                        acc[sku] = {
+                            alto: typeof producto.alto === "number" ? producto.alto : undefined,
+                            ancho: typeof producto.ancho === "number" ? producto.ancho : undefined,
+                            largo: typeof producto.largo === "number" ? producto.largo : undefined,
+                            peso: typeof producto.peso === "number" ? producto.peso : undefined,
+                        }
+
+                        return acc
+                    }, {})
+                }
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : JSON.stringify(error)
+                this.logger_.warn(`[SkydropxProService] Unexpected error fetching product dimensions from Supabase: ${errorMessage}`)
+            }
+        }
 
         let totalWeight = 0
         let maxDimensions = { length: 0, width: 0, height: 0 }
-  
+
         items.forEach(item => {
             const quantity = item.quantity || 1
-            const itemWeight = item.variant?.weight || 1
+            const sku = this.normaliseSku(
+                item.variant_sku ||
+                item.variant?.sku ||
+                item.variant?.product?.sku
+            )
+            const producto = sku ? productosMap[sku] : undefined
+
+            const variantWeight = typeof item.variant?.weight === "number" ? item.variant.weight : undefined
+            const productWeight = typeof producto?.peso === "number" ? producto.peso : undefined
+
+            const itemWeight = productWeight && productWeight > 0
+                ? productWeight
+                : variantWeight && variantWeight > 0
+                    ? variantWeight
+                    : 1
+
             totalWeight += itemWeight * quantity
-    
-            // Update max dimensions (assuming dimensions are in cm)
-            maxDimensions.length = Math.max(maxDimensions.length, item.variant?.length || 10)
-            maxDimensions.width = Math.max(maxDimensions.width, item.variant?.width || 10)
-            maxDimensions.height = Math.max(maxDimensions.height, item.variant?.height || 10)
+
+            const dimensionLength = producto?.largo && producto.largo > 0
+                ? producto.largo
+                : typeof item.variant?.length === "number" && item.variant.length > 0
+                    ? item.variant.length
+                    : 10
+
+            const dimensionWidth = producto?.ancho && producto.ancho > 0
+                ? producto.ancho
+                : typeof item.variant?.width === "number" && item.variant.width > 0
+                    ? item.variant.width
+                    : 10
+
+            const dimensionHeight = producto?.alto && producto.alto > 0
+                ? producto.alto
+                : typeof item.variant?.height === "number" && item.variant.height > 0
+                    ? item.variant.height
+                    : 10
+
+            maxDimensions.length = Math.max(maxDimensions.length, dimensionLength * quantity)
+            maxDimensions.width = Math.max(maxDimensions.width, dimensionWidth * quantity)
+            maxDimensions.height = Math.max(maxDimensions.height, dimensionHeight * quantity)
         })
         
-        // Ensure minimum weight for LTL services (most require >68kg)
-        // For automotive parts, we need to handle heavy components
-        const minWeight = 0.5; // 500g minimum
+        const minWeight = 0.01; // 10g minimum to avoid zero-weight packages
         const maxWeight = 500; // 500kg maximum for automotive parts (engines, transmissions, etc.)
         
         // Ensure minimum values and validate
@@ -597,7 +699,7 @@ class SkydropxProService extends MedusaService({
                 : "default"
             try {
                 this.logger_.info(`[SkydropxProService] Processing warehouse ${normalizedWarehouseId} with ${(items as any[]).length} items`)
-                const packageDetails = this.calculatePackageDetails(items)
+                const packageDetails = await this.calculatePackageDetails(items)
                 const origin = await this.getOriginAddress(normalizedWarehouseId)
                 const destination = this.getDestinationAddress(cart, zipDetails)
                 
