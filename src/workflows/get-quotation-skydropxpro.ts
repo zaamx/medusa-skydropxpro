@@ -6,7 +6,7 @@ import {
 import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk"
 import SkydropxProModuleService from "../modules/skydropxpro/service"
 import { SKYDROPPX_MODULE } from "../modules/skydropxpro"
-
+import { Modules } from "@medusajs/framework/utils"
 type GetQuotationSkydropxproInput = {
     cart: any
 }
@@ -16,6 +16,8 @@ const getQuotationSkydropxproStep = createStep(
     // async (null, { container }) => {
     async (input: GetQuotationSkydropxproInput, { container }) => {
         const skydropxproService: SkydropxProModuleService = container.resolve(SKYDROPPX_MODULE)
+        const stockLocationModuleService = container.resolve(Modules.STOCK_LOCATION) 
+        skydropxproService.setStockLocationModuleService(stockLocationModuleService)
         try {
             const zipDetails = await skydropxproService.getZipCodeDetails(input.cart.shipping_address.postal_code)
             if (!zipDetails) {

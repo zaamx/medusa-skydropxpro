@@ -63,23 +63,15 @@ Join our [Discord server](https://discord.com/invite/medusajs) to meet other com
 - [LinkedIn](https://www.linkedin.com/company/medusajs)
 - [Medusa Blog](https://medusajs.com/blog/)
 
-node_modules/@medusajs/medusa/dist/commands/plugin/db/generate.js
--- [npx medusa plugin:publish ]
 
-npx medusa plugin:db:generate
 
- Plugin Development
+npx medusa plugin:publish
+cd ~/path/to/medusa-app
+yarn add --dev yalc
+npx medusa plugin:add @zaamx/medusa-skydropxpro
 npx medusa plugin:develop
+yarn dev
 
-Plugin DB generation
-npx medusa plugin:db:generate
-
-On Medusa Main Project
-npx medusa db:migrate
-
-on MasFactura Module
-npx medusa plugin:build 
-npm publish --access public
 
 # Medusa Skydropx Pro Plugin
 

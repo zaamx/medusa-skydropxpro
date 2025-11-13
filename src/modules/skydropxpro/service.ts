@@ -1,4 +1,4 @@
-import { MedusaService, Modules } from "@medusajs/framework/utils"
+import { MedusaService } from "@medusajs/framework/utils"
 import { Parcel, ParcelService } from "./models/skydropx"
 import { Logger } from "@medusajs/framework/types"
 import axios from "axios"
@@ -31,14 +31,8 @@ type SkydropxOriginAddress = {
   email: string
 }
 
-type ContainerResolver = {
-  resolve?: (identifier: string) => any
-}
-
 type InjectedDependencies = {
   logger: Logger
-  stockLocationModuleService?: StockLocationModuleService
-  container?: ContainerResolver
 }
 
 export type SkydropxRate = {
@@ -115,18 +109,16 @@ class SkydropxProService extends MedusaService({
     protected readonly options_: SkydropxProServiceOptions
     protected readonly logger_: Logger
     protected stockLocationModuleService_?: StockLocationModuleService
-    protected container_?: ContainerResolver
 
     constructor(
-        { logger, stockLocationModuleService, container }: InjectedDependencies,
+        deps: InjectedDependencies,
         options: SkydropxProServiceOptions
       ) {
         // @ts-ignore
         super(...arguments)
+        const { logger } = deps
         this.options_ = options
         this.logger_ = logger
-        this.stockLocationModuleService_ = stockLocationModuleService
-        this.container_ = container
       }
 
     /**
@@ -186,23 +178,24 @@ class SkydropxProService extends MedusaService({
             this.logger_.warn('[SkydropxProService] Empty store name in origin address, using default')
         }
 
-        const resolvedStoreName = trimmedStoreName || 'Toyota Satelite'
-        const resolvedPostalCode = postalCode || '54030'
-        const resolvedCompanyName = trimmedStoreName || 'HCW Store'
+        const resolvedPostalCode = postalCode || ''
+        const normalizedStoreName = trimmedStoreName.includes("||")
+            ? trimmedStoreName.split("||").map(segment => segment.trim()).filter(Boolean)[0] || trimmedStoreName
+            : trimmedStoreName
 
         return {
             country_code: "MX",
             postal_code: resolvedPostalCode,
-            area_level1: process.env.STORE_STATE || 'Estado de México',
-            area_level2: process.env.STORE_MUNICIPALITY || 'Tlalnepantla',
-            area_level3: process.env.STORE_SUBURB || 'Centro Industrial Tlalnepantla',
-            street1: process.env.STORE_ADDRESS || 'Perif. Blvd. Manuel Ávila Camacho',
-            internal_number: process.env.STORE_EXT_NUMBER || '3039',
-            reference: process.env.STORE_REFERENCE || 'Agencia automovil',
-            name: resolvedStoreName,
-            company: resolvedCompanyName,
-            phone: process.env.STORE_PHONE || '5555555555',
-            email: process.env.STORE_EMAIL || 'store@email.com'
+            area_level1: process.env.STORE_STATE || '',
+            area_level2: process.env.STORE_MUNICIPALITY || '',
+            area_level3: process.env.STORE_SUBURB || '',
+            street1: process.env.STORE_ADDRESS || '',
+            internal_number: process.env.STORE_EXT_NUMBER || '',
+            reference: process.env.STORE_REFERENCE || '',
+            name: normalizedStoreName,
+            company: normalizedStoreName,
+            phone: process.env.STORE_PHONE || '',
+            email: process.env.STORE_EMAIL || 'soporte@ballena.com.mx'
         }
     }
 
@@ -237,7 +230,7 @@ class SkydropxProService extends MedusaService({
 
         const district = typeof address.district === "string" && address.district.trim()
             ? address.district.trim()
-            : fallback.area_level3
+            : fallback.area_level3 || "N/A"
 
         const street1 = typeof address.address_1 === "string" && address.address_1.trim()
             ? address.address_1.trim()
@@ -272,7 +265,10 @@ class SkydropxProService extends MedusaService({
             : undefined
 
         const rawName = typeof stockLocation.name === "string" ? stockLocation.name.trim() : ""
-        const name = rawName || fallback.name
+        const strippedName = rawName.includes("||")
+            ? rawName.split("||").map(segment => segment.trim()).filter(Boolean)[0] || rawName
+            : rawName
+        const name = strippedName || fallback.name
 
         const internalNumber = metadataInternalNumber || address2 || fallback.internal_number
         const reference =
@@ -292,39 +288,16 @@ class SkydropxProService extends MedusaService({
             area_level3: metadataAreaLevel3 || district,
             street1,
             internal_number: internalNumber,
-            reference,
+            reference: reference ? reference.slice(0, 30) : reference,
             name,
             company: metadataCompany || name || fallback.company,
             phone,
-            email: metadataEmail || fallback.email
+            email: metadataEmail || fallback.email || 'soporte@ballena.com.mx'
         }
     }
 
-    private async resolveStockLocationModuleService(): Promise<StockLocationModuleService | undefined> {
-        if (this.stockLocationModuleService_) {
-            return this.stockLocationModuleService_
-        }
-
-        const container =
-            this.container_ ??
-            ((this as unknown as { container?: ContainerResolver }).container) ??
-            ((this as unknown as { scope?: ContainerResolver }).scope)
-        if (!container?.resolve) {
-            return undefined
-        }
-
-        try {
-            const resolved = container.resolve(Modules.STOCK_LOCATION) as StockLocationModuleService | undefined
-            if (resolved) {
-                this.stockLocationModuleService_ = resolved
-                return resolved
-            }
-        } catch (error) {
-            const message = error instanceof Error ? error.message : JSON.stringify(error)
-            this.logger_.warn(`[SkydropxProService] Failed to resolve stock location module service: ${message}`)
-        }
-
-        return undefined
+    setStockLocationModuleService(service?: StockLocationModuleService) {
+        this.stockLocationModuleService_ = service
     }
 
     /**
@@ -498,7 +471,7 @@ class SkydropxProService extends MedusaService({
             return defaultAddress
         }
 
-        const moduleService = await this.resolveStockLocationModuleService()
+        const moduleService = this.stockLocationModuleService_
         if (!moduleService?.listStockLocations) {
             this.logger_.warn(`[SkydropxProService] Stock location module service unavailable when resolving almacen ${normalizedAlmacenId}`)
             return defaultAddress
@@ -669,7 +642,9 @@ class SkydropxProService extends MedusaService({
                     this.logger_.warn(`[SkydropxProService] Package weight ${packageWeight}kg - very heavy parts, may require special handling`)
                 }
                 
-                const isInternational = origin.country_code !== destination.country_code
+                const isInternational =
+                    (origin.country_code || '').toUpperCase() !==
+                    (destination.country_code || '').toUpperCase()
 
                 const requestData = {
                     quotation: {

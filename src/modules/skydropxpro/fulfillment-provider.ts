@@ -21,7 +21,6 @@ import SkydropxProService, {
 
 type InjectedDependencies = {
   logger: Logger
-  stockLocationModuleService?: any
 }
 
 type SkydropxFulfillmentProviderOptions = SkydropxProServiceOptions & {
@@ -53,8 +52,8 @@ class SkydropxFulfillmentProviderService extends AbstractFulfillmentProviderServ
   protected skydropxService_: SkydropxProService
 
   constructor(
-    { logger, stockLocationModuleService }: InjectedDependencies,
-    options: SkydropxFulfillmentProviderOptions =
+    { logger }: InjectedDependencies,
+    _options: SkydropxFulfillmentProviderOptions =
       {} as SkydropxFulfillmentProviderOptions
   ) {
     super()
@@ -67,20 +66,11 @@ class SkydropxFulfillmentProviderService extends AbstractFulfillmentProviderServ
     }
 
     this.logger_ = logger
-    this.options_ = options
+    this.options_ = _options
 
-    const { apiKey, apiSecret, apiUrl } = options ?? {}
-
-    if (!apiKey || !apiSecret || !apiUrl) {
-      throw new MedusaError(
-        MedusaError.Types.INVALID_DATA,
-        "Skydropx fulfillment provider options must include apiKey, apiSecret and apiUrl"
-      )
-    }
-
-    this.skydropxService_ = new SkydropxProService(
-      { logger, stockLocationModuleService },
-      options
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      "Skydropx fulfillment provider is disabled. Use the Skydropx workflows instead."
     )
   }
 
