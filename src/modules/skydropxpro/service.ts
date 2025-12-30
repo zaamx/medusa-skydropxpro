@@ -1,3 +1,22 @@
+/**
+ * SkydropxProService
+ * 
+ * Operational Flow:
+ * 1. Authentication: 
+ *    - Authenticates via OAuth (Client Credentials) to obtain an access token.
+ * 2. Quotation (Checkout Flow):
+ *    - `calculateShippingRates` groups cart items by warehouse.
+ *    - Resolves package dimensions via `calculatePackageDetails` (checking Supabase for product specs).
+ *    - Resolves origin address via `getOriginAddress` (mapping Medusa Stock Locations).
+ *    - Requests quotations from Skydropx and polls for completion.
+ * 3. Shipment Creation (Fulfillment Flow):
+ *    - `createShipment` is triggered during order fulfillment.
+ *    - Validates order items, calculates declared value, and confirms addresses.
+ *    - Creates a shipment in Skydropx using the selected rate.
+ *    - Polls for shipment success status.
+ * 4. Management:
+ *    - Provides methods for Tracking, Pickup scheduling, Cancellations, and Label generation.
+ */
 import { MedusaService } from "@medusajs/framework/utils"
 import { Parcel, ParcelService } from "./models/skydropx"
 import { Logger } from "@medusajs/framework/types"
@@ -5,35 +24,35 @@ import axios from "axios"
 import { createClient, SupabaseClient } from "@supabase/supabase-js"
 
 export type SkydropxProServiceOptions = {
-  apiUrl: string,
-  apiKey: string,
-  apiSecret: string
+    apiUrl: string,
+    apiKey: string,
+    apiSecret: string
 }
 
 type StockLocationModuleService = {
-  listStockLocations: (
-    selector?: Record<string, any>,
-    config?: Record<string, any>
-  ) => Promise<any[]>
+    listStockLocations: (
+        selector?: Record<string, any>,
+        config?: Record<string, any>
+    ) => Promise<any[]>
 }
 
 type SkydropxOriginAddress = {
-  country_code: string
-  postal_code: string
-  area_level1: string
-  area_level2: string
-  area_level3: string
-  street1: string
-  internal_number: string
-  reference: string
-  name: string
-  company: string
-  phone: string
-  email: string
+    country_code: string
+    postal_code: string
+    area_level1: string
+    area_level2: string
+    area_level3: string
+    street1: string
+    internal_number: string
+    reference: string
+    name: string
+    company: string
+    phone: string
+    email: string
 }
 
 type InjectedDependencies = {
-  logger: Logger
+    logger: Logger
 }
 
 export type SkydropxRate = {
@@ -117,9 +136,9 @@ const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey, {
 })
 
 class SkydropxProService extends MedusaService({
-  Parcel,
-  ParcelService
-}){
+    Parcel,
+    ParcelService
+}) {
     protected readonly options_: SkydropxProServiceOptions
     protected readonly logger_: Logger
     protected stockLocationModuleService_?: StockLocationModuleService
@@ -127,21 +146,26 @@ class SkydropxProService extends MedusaService({
     constructor(
         deps: InjectedDependencies,
         options: SkydropxProServiceOptions
-      ) {
+    ) {
         // @ts-ignore
         super(...arguments)
         const { logger } = deps
         this.options_ = options
         this.logger_ = logger
-      }
+    }
 
     /**
-     * Helper method to handle API errors consistently
+     * Handles API errors consistently across the service.
+     * Logs the error and returns a standardized error object.
+     * 
+     * @param error - The error object caught from the try/catch block.
+     * @param methodName - The name of the method where the error occurred.
+     * @returns A standarized error response object.
      */
     private handleApiError(error: any, methodName: string): any {
         const errorMessage = error.response?.data || error.message || error
         this.logger_.error(`[SkydropxProService.${methodName}] Error: ${JSON.stringify(errorMessage)}`)
-        
+
         // Return appropriate error response based on the method
         return {
             success: false,
@@ -151,7 +175,9 @@ class SkydropxProService extends MedusaService({
     }
 
     /**
-     * Validate required configuration
+     * Validates that the necessary configuration options (API Key, Secret, URL) are present.
+     * 
+     * @returns True if configuration is valid, false otherwise.
      */
     private validateConfig(): boolean {
         if (!this.options_.apiKey || !this.options_.apiSecret || !this.options_.apiUrl) {
@@ -161,6 +187,13 @@ class SkydropxProService extends MedusaService({
         return true
     }
 
+    /**
+     * Extracts the warehouse ID from an item's SKU.
+     * Expects SKU format: "SKU||WAREHOUSE_ID".
+     * 
+     * @param item - The line item to check.
+     * @returns The warehouse ID if found, otherwise undefined.
+     */
     private getAlmacenIdFromItem(item: any): string | undefined {
         const sku = typeof item?.variant_sku === "string" ? item.variant_sku : undefined
 
@@ -180,6 +213,12 @@ class SkydropxProService extends MedusaService({
         return almacenId
     }
 
+    /**
+     * Builds the default origin address using environment variables.
+     * Used as a fallback when no specific warehouse address is found.
+     * 
+     * @returns The default SkydropxOriginAddress.
+     */
     private buildDefaultOriginAddress(): SkydropxOriginAddress {
         const postalCode = String(process.env.STORE_ZIP_CODE ?? "54030").trim()
         if (!postalCode) {
@@ -213,6 +252,13 @@ class SkydropxProService extends MedusaService({
         }
     }
 
+    /**
+     * Maps a Medusa Stock Location to a Skydropx Origin Address.
+     * 
+     * @param stockLocation - The source stock location from Medusa.
+     * @param fallback - The fallback address to use for missing fields.
+     * @returns The mapped SkydropxOriginAddress.
+     */
     private mapStockLocationToOriginAddress(
         stockLocation: any,
         fallback: SkydropxOriginAddress
@@ -287,7 +333,7 @@ class SkydropxProService extends MedusaService({
         const internalNumber = metadataInternalNumber || address2 || fallback.internal_number
         const reference =
             metadataReference ||
-            [street1, address2].filter(Boolean).join(" ").trim() ||
+            [street1].filter(Boolean).join(" ").trim() ||
             fallback.reference
 
         const phone = metadataPhone ||
@@ -302,7 +348,7 @@ class SkydropxProService extends MedusaService({
             area_level3: metadataAreaLevel3 || district,
             street1,
             internal_number: internalNumber,
-            reference: reference ? reference.slice(0, 30) : reference,
+            reference: reference.slice(0, 30),
             name,
             company: metadataCompany || name || fallback.company,
             phone,
@@ -310,15 +356,22 @@ class SkydropxProService extends MedusaService({
         }
     }
 
+    /**
+     * Injects the Stock Location Module Service.
+     * This service is required to resolve warehouse addresses.
+     * 
+     * @param service - The StockLocationModuleService instance.
+     */
     setStockLocationModuleService(service?: StockLocationModuleService) {
         this.stockLocationModuleService_ = service
     }
 
     /**
-     * Authenticate with Skydropx use axios
-     * Updated to match new OAuth endpoint structure
+     * Authenticates with Skydropx API using Client Credentials.
+     * 
+     * @returns The access token string or null if authentication fails.
      */
-    async authenticate(){
+    async authenticate() {
         if (!this.validateConfig()) {
             return null
         }
@@ -356,10 +409,12 @@ class SkydropxProService extends MedusaService({
     }
 
     /**
-     * Get quotations
-     * Updated to match new API structure
+     * Creates a new quotation request in Skydropx.
+     * 
+     * @param data - The I/O data for the quotation (origin, destination, package).
+     * @returns The quotation response object.
      */
-    async getQuotations(data: any){
+    async getQuotations(data: any) {
         const token = await this.authenticate()
 
         if (!token || typeof token !== 'string') {
@@ -374,7 +429,7 @@ class SkydropxProService extends MedusaService({
                     'Content-Type': 'application/json'
                 }
             })
-            
+
             // Ensure we return a proper structure
             if (response.data && typeof response.data === 'object') {
                 return response.data
@@ -386,12 +441,15 @@ class SkydropxProService extends MedusaService({
             return this.handleApiError(error, 'getQuotations')
         }
     }
-    
+
     /**
-     * Get quotation by id
-     * Updated to match new API structure
+     * Retrieves a specific quotation by its ID.
+     * Useful for polling incomplete quotations.
+     * 
+     * @param id - The quotation ID.
+     * @returns The quotation details.
      */
-    async getQuotationById(id: string){
+    async getQuotationById(id: string) {
         const token = await this.authenticate()
         if (!token || typeof token !== 'string') {
             this.logger_.error(`[SkydropxProService.getQuotationById] Invalid token received: ${JSON.stringify(token)}`)
@@ -405,7 +463,7 @@ class SkydropxProService extends MedusaService({
                     'Content-Type': 'application/json'
                 }
             })
-            
+
             // Ensure we return a proper structure
             if (response.data && typeof response.data === 'object') {
                 return response.data
@@ -414,20 +472,32 @@ class SkydropxProService extends MedusaService({
                 return { error: 'Invalid response structure' }
             }
         } catch (error) {
-            return this.handleApiError(error, 'getQuotationById') 
-        }   
+            return this.handleApiError(error, 'getQuotationById')
+        }
     }
 
+    /**
+     * Placeholder for ZIP code details retrieval.
+     */
     async getZipCodeDetails(postcode: string) {
         /* TODO: Implement this */
         return postcode
     }
-    
+
+    /**
+     * Placeholder for client balance retrieval.
+     */
     async getClientBalance() {
         /* TODO: Implement this */
         return 0
     }
 
+    /**
+     * Normalises SKU by removing the warehouse identifier.
+     * 
+     * @param rawSku - The raw SKU string.
+     * @returns The clean SKU.
+     */
     private normaliseSku(rawSku: string | undefined): string | undefined {
         if (!rawSku || typeof rawSku !== "string") {
             return undefined
@@ -438,6 +508,13 @@ class SkydropxProService extends MedusaService({
         return trimmed && trimmed.length > 0 ? trimmed : undefined
     }
 
+    /**
+     * Calculates the total weight and dimensions for a set of items.
+     * Fetches product dimensions from Supabase 'productos' table if available.
+     * 
+     * @param items - List of items to calculate.
+     * @returns Object containing length, width, height, and weight.
+     */
     async calculatePackageDetails(items: any) {
         if (!items || !Array.isArray(items) || items.length === 0) {
             this.logger_.warn('[SkydropxProService] No items provided for package calculation')
@@ -542,10 +619,10 @@ class SkydropxProService extends MedusaService({
             maxDimensions.width = Math.max(maxDimensions.width, dimensionWidth * quantity)
             maxDimensions.height = Math.max(maxDimensions.height, dimensionHeight * quantity)
         })
-        
+
         const minWeight = 0.01; // 10g minimum to avoid zero-weight packages
         const maxWeight = 500; // 500kg maximum for automotive parts (engines, transmissions, etc.)
-        
+
         // Ensure minimum values and validate
         const packageDetails = {
             length: Math.max(maxDimensions.length, 1),
@@ -553,12 +630,19 @@ class SkydropxProService extends MedusaService({
             height: Math.max(maxDimensions.height, 1),
             weight: Math.max(Math.min(totalWeight, maxWeight), minWeight)
         }
-        
+
         this.logger_.info(`[SkydropxProService] Calculated package details: ${JSON.stringify(packageDetails)}`)
-        
+
         return packageDetails
     }
-  
+
+    /**
+     * Resolves the origin address for a specific warehouse ID.
+     * Attempts to find a matching Stock Location in Medusa.
+     * 
+     * @param almacenId - The warehouse identifier.
+     * @returns The resolved SkydropxOriginAddress.
+     */
     async getOriginAddress(almacenId?: string): Promise<SkydropxOriginAddress> {
         const defaultAddress = this.buildDefaultOriginAddress()
 
@@ -639,7 +723,14 @@ class SkydropxProService extends MedusaService({
         this.logger_.warn(`[SkydropxProService] No stock location found for almacen ${normalizedAlmacenId}, falling back to default origin address`)
         return defaultAddress
     }
-  
+
+    /**
+     * Extracts and processes the destination address from the cart.
+     * 
+     * @param cart - The shopping cart object containing the shipping address.
+     * @param zipDetails - (Optional) Additional zip code details.
+     * @returns The formatted destination address or null if invalid.
+     */
     getDestinationAddress(cart: any, zipDetails: any) {
         if (!cart?.shipping_address) {
             this.logger_.warn('[SkydropxProService] No shipping address provided')
@@ -651,12 +742,12 @@ class SkydropxProService extends MedusaService({
         if (!postalCode || postalCode === '') {
             this.logger_.warn('[SkydropxProService] Empty postal code in destination address, using default')
         }
-        
+
         const customerName = `${address.first_name || 'N/A'} ${address.last_name || 'N/A'}`.trim()
         if (customerName === 'N/A N/A' || customerName === '') {
             this.logger_.warn('[SkydropxProService] Empty customer name in destination address, using default')
         }
-        
+
         return {
             country_code: "MX",
             postal_code: postalCode || '00000',
@@ -665,7 +756,7 @@ class SkydropxProService extends MedusaService({
             area_level3: address.district || 'N/A',
             street1: address.address_1 || 'N/A',
             internal_number: address.address_2 || '1',
-            reference: (address.address_1 + ' ' + address.address_2) || 'N/A',
+            reference: (address.address_1) || 'N/A',
             name: customerName || 'Customer Name',
             company: address.company || '',
             phone: address.phone || '0',
@@ -673,6 +764,28 @@ class SkydropxProService extends MedusaService({
         }
     }
 
+    /**
+     * Main method to calculate shipping rates for a cart.
+     * Groups items by warehouse, requests quotations for each group, and returns aggregated rates.
+     * 
+     * Operational Flow:
+     * 1. Groups cart items by their assigned warehouse (using SKU identifier).
+     * 2. Iterates over each warehouse group to calculate independent shipping rates.
+     * 3. For each group:
+     *    - Calculates package dimensions and weight.
+     *    - Resolves origin and destination addresses.
+     *    - Requests a quotation from Skydropx API.
+     *    - **Polling Mechanism**: If the initial quotation response has `is_completed: false`, 
+     *      it enters a polling loop with exponential backoff (starting at 1s) to wait for 
+     *      the quotation to complete (up to 5 attempts). This ensures rates are fully generated 
+     *      before returning.
+     *    - Filters valid rates (valid price, valid days, applicable status).
+     *    - Maps internal rates to Medusa-compatible structure.
+     * 
+     * @param cart - The user's cart containing items and shipping address.
+     * @param zipDetails - Additional zip context for destination validation.
+     * @returns Array of rates grouped by warehouse.
+     */
     async calculateShippingRates(cart: any, zipDetails: any): Promise<SkydropxWarehouseRates[]> {
         if (!cart?.items || !Array.isArray(cart.items) || cart.items.length === 0) {
             this.logger_.warn('[SkydropxProService] No cart items provided for rate calculation')
@@ -681,231 +794,237 @@ class SkydropxProService extends MedusaService({
 
         // Group items by warehouse
         const warehouseItems = (cart.items as any[]).reduce((acc: Record<string, any[]>, item) => {
-          const almacenId = this.getAlmacenIdFromItem(item) || 'default'
-          const key = almacenId && almacenId !== '' ? almacenId : 'default'
-          if (!acc[key]) {
-            acc[key] = []
-          }
-          acc[key].push(item)
-          return acc
+            const almacenId = this.getAlmacenIdFromItem(item) || 'default'
+            const key = almacenId && almacenId !== '' ? almacenId : 'default'
+            if (!acc[key]) {
+                acc[key] = []
+            }
+            acc[key].push(item)
+            return acc
         }, {} as Record<string, any[]>)
-      
+
         // Calculate rates for each warehouse
         const warehouseRates = await Promise.all(
-          Object.entries(warehouseItems).map(async ([warehouseId, items]) => {
-            const normalizedWarehouseId =
-              typeof warehouseId === "string" && warehouseId.trim()
-                ? warehouseId.trim()
-                : "default"
-            try {
-                this.logger_.info(`[SkydropxProService] Processing warehouse ${normalizedWarehouseId} with ${(items as any[]).length} items`)
-                const packageDetails = await this.calculatePackageDetails(items)
-                const origin = await this.getOriginAddress(normalizedWarehouseId)
-                const destination = this.getDestinationAddress(cart, zipDetails)
-                
-                if (!destination) {
-                    this.logger_.warn(`[SkydropxProService] Invalid destination address for warehouse ${normalizedWarehouseId}`)
-                    return {
-                        warehouse_id: normalizedWarehouseId,
-                        rates: []
-                    }
-                }
-                
-                // Validate address data
-                if (!origin.postal_code || !destination.postal_code) {
-                    this.logger_.warn(`[SkydropxProService] Missing postal codes for warehouse ${normalizedWarehouseId}`)
-                    return {
-                        warehouse_id: normalizedWarehouseId,
-                        rates: []
-                    }
-                }
-                
-                // Validate package details
-                if (!packageDetails || packageDetails.weight <= 0 || packageDetails.length <= 0 || packageDetails.width <= 0 || packageDetails.height <= 0) {
-                    this.logger_.warn(`[SkydropxProService] Invalid package details for warehouse ${normalizedWarehouseId}: ${JSON.stringify(packageDetails)}`)
-                    return {
-                        warehouse_id: normalizedWarehouseId,
-                        rates: []
-                    }
-                }
-                
-                // Determine which carriers to request based on package weight
-                const packageWeight = packageDetails.weight;
-                let requestedCarriers = ['fedex', 'dhl'];
-                
-                // For automotive parts, we need to handle a wide range of weights
-                if (packageWeight < 50) {
-                    this.logger_.info(`[SkydropxProService] Package weight ${packageWeight}kg - using standard services for small parts`)
-                } else if (packageWeight >= 50 && packageWeight < 68) {
-                    this.logger_.info(`[SkydropxProService] Package weight ${packageWeight}kg - medium parts, may have limited LTL options`)
-                } else if (packageWeight >= 68 && packageWeight < 500) {
-                    this.logger_.info(`[SkydropxProService] Package weight ${packageWeight}kg - heavy automotive parts, LTL services available`)
-                } else {
-                    this.logger_.warn(`[SkydropxProService] Package weight ${packageWeight}kg - very heavy parts, may require special handling`)
-                }
-                
-                const isInternational =
-                    (origin.country_code || '').toUpperCase() !==
-                    (destination.country_code || '').toUpperCase()
+            Object.entries(warehouseItems).map(async ([warehouseId, items]) => {
+                const normalizedWarehouseId =
+                    typeof warehouseId === "string" && warehouseId.trim()
+                        ? warehouseId.trim()
+                        : "default"
+                try {
+                    this.logger_.info(`[SkydropxProService] Processing warehouse ${normalizedWarehouseId} with ${(items as any[]).length} items`)
+                    const packageDetails = await this.calculatePackageDetails(items)
+                    const origin = await this.getOriginAddress(normalizedWarehouseId)
+                    const destination = this.getDestinationAddress(cart, zipDetails)
 
-                const requestData = {
-                    quotation: {
-                        address_from: origin,
-                        address_to: destination,
-                        parcels: [packageDetails],
-                        requested_carriers: requestedCarriers,
-                        ...(isInternational && {
-                            products: (items as any[]).map((item: any, index: number) => {
-                                const hsCode = item.variant?.product?.hs_code || item.product_description || '0000000000'
-                                const description = item.product_description || item.title || `Item ${index + 1}`
-
-                                return {
-                                    hs_code: String(hsCode).padStart(10, '0').slice(0, 10),
-                                    description_en: description,
-                                    country_code: item.variant?.product?.origin_country || 'MX',
-                                    quantity: item.quantity || 1,
-                                    price: item.unit_price || 0
-                                }
-                            })
-                        })
-                    }
-                }
-
-                this.logger_.info(`[SkydropxProService] Requesting quotation for warehouse ${normalizedWarehouseId} with data: ${JSON.stringify(requestData)}`)
-
-                let response = null
-                const previousQuotation = await this.getQuotations(requestData)
-                
-                if (!previousQuotation || (previousQuotation as any).error) {
-                    this.logger_.warn(`[SkydropxProService] Failed to get quotation for warehouse ${normalizedWarehouseId}: ${JSON.stringify(previousQuotation)}`)
-                    return {
-                        warehouse_id: normalizedWarehouseId,
-                        rates: []
-                    }
-                }
-                
-                // Check if previousQuotation has the expected structure
-                if (!previousQuotation || typeof previousQuotation !== 'object') {
-                    this.logger_.warn(`[SkydropxProService] Invalid quotation response structure for warehouse ${normalizedWarehouseId}: ${JSON.stringify(previousQuotation)}`)
-                    return {
-                        warehouse_id: normalizedWarehouseId,
-                        rates: []
-                    }
-                }
-                
-                // as the quotation can be incomplete wee need to get the quotation by id, if "is_completed": false,
-                if (previousQuotation.is_completed === false) {
-                    const MAX_ATTEMPTS = 5;
-                    const INITIAL_DELAY = 1000; // 1 second
-
-                    let attempts = 0;
-                    let quotation = previousQuotation;
-
-                    this.logger_.info(`[SkydropxProService] Quotation ${quotation.id} is incomplete, polling for completion...`)
-
-                    while (quotation && quotation.is_completed === false && attempts < MAX_ATTEMPTS) {
-                        await new Promise(resolve => setTimeout(resolve, INITIAL_DELAY * Math.pow(2, attempts)));
-                        const updatedQuotation = await this.getQuotationById(quotation.id);
-                        if (updatedQuotation && !updatedQuotation.error) {
-                            quotation = updatedQuotation;
-                            this.logger_.info(`[SkydropxProService] Quotation ${quotation.id} status: ${quotation.is_completed}`)
-                        } else {
-                            this.logger_.warn(`[SkydropxProService] Failed to get updated quotation ${quotation.id}`)
-                            break;
+                    if (!destination) {
+                        this.logger_.warn(`[SkydropxProService] Invalid destination address for warehouse ${normalizedWarehouseId}`)
+                        return {
+                            warehouse_id: normalizedWarehouseId,
+                            rates: []
                         }
-                        attempts++;
                     }
 
-                    response = quotation;
-                } else {
-                    response = previousQuotation
-                }
-                
-                if (!response || (response as any).error) {
-                    this.logger_.warn(`[SkydropxProService] Invalid response for warehouse ${normalizedWarehouseId}: ${JSON.stringify(response)}`)
+                    // Validate address data
+                    if (!origin.postal_code || !destination.postal_code) {
+                        this.logger_.warn(`[SkydropxProService] Missing postal codes for warehouse ${normalizedWarehouseId}`)
+                        return {
+                            warehouse_id: normalizedWarehouseId,
+                            rates: []
+                        }
+                    }
+
+                    // Validate package details
+                    if (!packageDetails || packageDetails.weight <= 0 || packageDetails.length <= 0 || packageDetails.width <= 0 || packageDetails.height <= 0) {
+                        this.logger_.warn(`[SkydropxProService] Invalid package details for warehouse ${normalizedWarehouseId}: ${JSON.stringify(packageDetails)}`)
+                        return {
+                            warehouse_id: normalizedWarehouseId,
+                            rates: []
+                        }
+                    }
+
+                    // Determine which carriers to request based on package weight
+                    const packageWeight = packageDetails.weight;
+                    let requestedCarriers = ['fedex', 'dhl'];
+
+                    // For automotive parts, we need to handle a wide range of weights
+                    if (packageWeight < 50) {
+                        this.logger_.info(`[SkydropxProService] Package weight ${packageWeight}kg - using standard services for small parts`)
+                    } else if (packageWeight >= 50 && packageWeight < 68) {
+                        this.logger_.info(`[SkydropxProService] Package weight ${packageWeight}kg - medium parts, may have limited LTL options`)
+                    } else if (packageWeight >= 68 && packageWeight < 500) {
+                        this.logger_.info(`[SkydropxProService] Package weight ${packageWeight}kg - heavy automotive parts, LTL services available`)
+                    } else {
+                        this.logger_.warn(`[SkydropxProService] Package weight ${packageWeight}kg - very heavy parts, may require special handling`)
+                    }
+
+                    const isInternational =
+                        (origin.country_code || '').toUpperCase() !==
+                        (destination.country_code || '').toUpperCase()
+
+                    const requestData = {
+                        quotation: {
+                            address_from: origin,
+                            address_to: destination,
+                            parcels: [packageDetails],
+                            requested_carriers: requestedCarriers,
+                            ...(isInternational && {
+                                products: (items as any[]).map((item: any, index: number) => {
+                                    const hsCode = item.variant?.product?.hs_code || item.product_description || '0000000000'
+                                    const description = item.product_description || item.title || `Item ${index + 1}`
+
+                                    return {
+                                        hs_code: String(hsCode).padStart(10, '0').slice(0, 10),
+                                        description_en: description,
+                                        country_code: item.variant?.product?.origin_country || 'MX',
+                                        quantity: item.quantity || 1,
+                                        price: item.unit_price || 0
+                                    }
+                                })
+                            })
+                        }
+                    }
+
+                    this.logger_.info(`[SkydropxProService] Requesting quotation for warehouse ${normalizedWarehouseId} with data: ${JSON.stringify(requestData)}`)
+
+                    let response = null
+                    const previousQuotation = await this.getQuotations(requestData)
+
+                    if (!previousQuotation || (previousQuotation as any).error) {
+                        this.logger_.warn(`[SkydropxProService] Failed to get quotation for warehouse ${normalizedWarehouseId}: ${JSON.stringify(previousQuotation)}`)
+                        return {
+                            warehouse_id: normalizedWarehouseId,
+                            rates: []
+                        }
+                    }
+
+                    // Check if previousQuotation has the expected structure
+                    if (!previousQuotation || typeof previousQuotation !== 'object') {
+                        this.logger_.warn(`[SkydropxProService] Invalid quotation response structure for warehouse ${normalizedWarehouseId}: ${JSON.stringify(previousQuotation)}`)
+                        return {
+                            warehouse_id: normalizedWarehouseId,
+                            rates: []
+                        }
+                    }
+
+                    // as the quotation can be incomplete wee need to get the quotation by id, if "is_completed": false,
+                    if (previousQuotation.is_completed === false) {
+                        const MAX_ATTEMPTS = 5;
+                        const INITIAL_DELAY = 1000; // 1 second
+
+                        let attempts = 0;
+                        let quotation = previousQuotation;
+
+                        this.logger_.info(`[SkydropxProService] Quotation ${quotation.id} is incomplete, polling for completion...`)
+
+                        while (quotation && quotation.is_completed === false && attempts < MAX_ATTEMPTS) {
+                            await new Promise(resolve => setTimeout(resolve, INITIAL_DELAY * Math.pow(2, attempts)));
+                            const updatedQuotation = await this.getQuotationById(quotation.id);
+                            if (updatedQuotation && !updatedQuotation.error) {
+                                quotation = updatedQuotation;
+                                this.logger_.info(`[SkydropxProService] Quotation ${quotation.id} status: ${quotation.is_completed}`)
+                            } else {
+                                this.logger_.warn(`[SkydropxProService] Failed to get updated quotation ${quotation.id}`)
+                                break;
+                            }
+                            attempts++;
+                        }
+
+                        response = quotation;
+                    } else {
+                        response = previousQuotation
+                    }
+
+                    if (!response || (response as any).error) {
+                        this.logger_.warn(`[SkydropxProService] Invalid response for warehouse ${normalizedWarehouseId}: ${JSON.stringify(response)}`)
+                        return {
+                            warehouse_id: normalizedWarehouseId,
+                            rates: []
+                        }
+                    }
+
+                    // Validate response structure
+                    const typedResponse = response as SkydropxResponse
+                    if (!typedResponse.id || !Array.isArray(typedResponse.rates)) {
+                        this.logger_.warn(`[SkydropxProService] Invalid response structure for warehouse ${normalizedWarehouseId}: missing id or rates array`)
+                        return {
+                            warehouse_id: normalizedWarehouseId,
+                            rates: []
+                        }
+                    }
+                    // Filter and map only valid rates
+                    const validRates = typedResponse.rates?.filter(rate => {
+                        // Only include rates that have a valid price and are applicable
+                        const hasValidPrice = rate.total && parseFloat(rate.total) > 0;
+                        const isApplicable = rate.status === 'price_found_internal' || rate.status === 'price_found_external';
+                        const hasValidDays = rate.days && rate.days > 0;
+
+                        // For automotive parts, we might want to include LTL services for heavy items
+                        // but still filter out rates with no price or invalid status
+                        const isValid = hasValidPrice && isApplicable && hasValidDays;
+
+                        if (!isValid) {
+                            this.logger_.debug(`[SkydropxProService] Filtered out rate ${rate.provider_name} ${rate.provider_service_name}: price=${rate.total}, status=${rate.status}, days=${rate.days}`)
+                        }
+
+                        return isValid;
+                    }) || [];
+
+                    this.logger_.info(`[SkydropxProService] Found ${validRates.length} valid rates out of ${typedResponse.rates?.length || 0} total rates for warehouse ${normalizedWarehouseId}`)
+
+                    // If no valid rates found, log a warning but return empty array
+                    if (validRates.length === 0) {
+                        this.logger_.warn(`[SkydropxProService] No valid rates found for warehouse ${normalizedWarehouseId}. All rates were filtered out.`)
+                    }
+
+                    const normalizedRates: SkydropxCalculatedRate[] = validRates.map((rate) => {
+                        const providerName = rate.provider_name ?? "unknown_provider"
+                        const providerServiceCode = rate.provider_service_code ?? "unknown_service"
+                        const calculatedId = `skydropx_${providerName}_${providerServiceCode}`
+
+                        return {
+                            id: calculatedId,
+                            name: rate.provider_service_name,
+                            price: parseFloat(rate.total || "0"),
+                            data: {
+                                provider_name: rate.provider_name,
+                                provider_service_code: rate.provider_service_code,
+                                estimated_days: rate.days,
+                                currency_code: rate.currency_code,
+                                quotation_id: typedResponse.id,
+                                status: rate.status,
+                                cost: rate.cost || parseFloat(rate.total || "0"),
+                                zone: rate.zone,
+                                weight: rate.weight,
+                                success: true,
+                            },
+                            metadata: rate,
+                        }
+                    })
+
+                    return {
+                        warehouse_id: normalizedWarehouseId,
+                        rates: normalizedRates,
+                    }
+                } catch (error) {
+                    this.logger_.error(`[SkydropxProService] Error calculating rates for warehouse ${normalizedWarehouseId}: ${JSON.stringify(error)}`)
                     return {
                         warehouse_id: normalizedWarehouseId,
                         rates: []
                     }
                 }
-                
-                // Validate response structure
-                const typedResponse = response as SkydropxResponse
-                if (!typedResponse.id || !Array.isArray(typedResponse.rates)) {
-                    this.logger_.warn(`[SkydropxProService] Invalid response structure for warehouse ${normalizedWarehouseId}: missing id or rates array`)
-                    return {
-                        warehouse_id: normalizedWarehouseId,
-                        rates: []
-                    }
-                }
-                // Filter and map only valid rates
-                const validRates = typedResponse.rates?.filter(rate => {
-                    // Only include rates that have a valid price and are applicable
-                    const hasValidPrice = rate.total && parseFloat(rate.total) > 0;
-                    const isApplicable = rate.status === 'price_found_internal' || rate.status === 'price_found_external';
-                    const hasValidDays = rate.days && rate.days > 0;
-                    
-                    // For automotive parts, we might want to include LTL services for heavy items
-                    // but still filter out rates with no price or invalid status
-                    const isValid = hasValidPrice && isApplicable && hasValidDays;
-                    
-                    if (!isValid) {
-                        this.logger_.debug(`[SkydropxProService] Filtered out rate ${rate.provider_name} ${rate.provider_service_name}: price=${rate.total}, status=${rate.status}, days=${rate.days}`)
-                    }
-                    
-                    return isValid;
-                }) || [];
-                
-                this.logger_.info(`[SkydropxProService] Found ${validRates.length} valid rates out of ${typedResponse.rates?.length || 0} total rates for warehouse ${normalizedWarehouseId}`)
-                
-                // If no valid rates found, log a warning but return empty array
-                if (validRates.length === 0) {
-                    this.logger_.warn(`[SkydropxProService] No valid rates found for warehouse ${normalizedWarehouseId}. All rates were filtered out.`)
-                }
-                
-                const normalizedRates: SkydropxCalculatedRate[] = validRates.map((rate) => {
-                    const providerName = rate.provider_name ?? "unknown_provider"
-                    const providerServiceCode = rate.provider_service_code ?? "unknown_service"
-                    const calculatedId = `skydropx_${providerName}_${providerServiceCode}`
-
-                    return {
-                        id: calculatedId,
-                        name: rate.provider_service_name,
-                        price: parseFloat(rate.total || "0"),
-                        data: {
-                            provider_name: rate.provider_name,
-                            provider_service_code: rate.provider_service_code,
-                            estimated_days: rate.days,
-                            currency_code: rate.currency_code,
-                            quotation_id: typedResponse.id,
-                            status: rate.status,
-                            cost: rate.cost || parseFloat(rate.total || "0"),
-                            zone: rate.zone,
-                            weight: rate.weight,
-                            success: true,
-                        },
-                        metadata: rate,
-                    }
-                })
-
-                return {
-                    warehouse_id: normalizedWarehouseId,
-                    rates: normalizedRates,
-                }
-            } catch (error) {
-                this.logger_.error(`[SkydropxProService] Error calculating rates for warehouse ${normalizedWarehouseId}: ${JSON.stringify(error)}`)
-                return {
-                    warehouse_id: normalizedWarehouseId,
-                    rates: []
-                }
-            }
-          })
+            })
         )
-      
+
         return warehouseRates
     }
 
-    async getShipmentById(id: string){
+    /**
+     * Retrieves a shipment by its ID.
+     * 
+     * @param id - The shipment ID.
+     * @returns The shipment details.
+     */
+    async getShipmentById(id: string) {
         const token = await this.authenticate()
         if (!token) {
             return this.handleApiError({ message: 'Authentication failed' }, 'getShipmentById')
@@ -921,9 +1040,39 @@ class SkydropxProService extends MedusaService({
             return response.data
         } catch (error) {
             return this.handleApiError(error, 'getShipmentById')
-        }   
+        }
     }
-    
+
+    /**
+     * Creates a shipment label in Skydropx.
+     * Validates data, requests creation, and polls for success status.
+     * 
+     * Operational Flow:
+     * 1. Validation & Filtering:
+     *    - Authenticates the request.
+     *    - Filters order items to match the specific warehouse and fulfillment request.
+     *    - Calculates the declared value based on the items being shipped.
+     * 2. Address Resolution:
+     *    - Resolves the origin address based on the warehouse ID.
+     *    - Formats the destination address from the order details.
+     * 3. Rate Selection:
+     *    - Uses the provided `selectedRate` if available.
+     *    - Otherwise, attempts to find the rate corresponding to the warehouse from the order's shipping methods.
+     * 4. Creation Request:
+     *    - Constructs the shipment payload with addresses, package details (weight, dimensions), and rate ID.
+     *    - Sends the creation request to Skydropx (`POST /shipments`).
+     * 5. **Polling Mechanism**:
+     *    - If the shipment info returns a `workflow_status` of `'in_progress'`, it triggers a polling loop.
+     *    - Waits with exponential backoff (starting at 1s) and retries fetching the shipment details (up to 10 attempts).
+     *    - Ensures the process doesn't return until the label generation is successful or fails/times out.
+     * 
+     * @param order - The order details containing items and shipping address.
+     * @param zipDetails - Zip code context.
+     * @param fulfillment - The fulfillment object being processed.
+     * @param warehouse - The warehouse ID to fulfill items from.
+     * @param selectedRate - (Optional) Specific rate to force for this shipment.
+     * @returns Object indicating success (`boolean`), the full shipment data, and the rate used.
+     */
     async createShipment(
         order: any,
         zipDetails: any,
@@ -935,11 +1084,11 @@ class SkydropxProService extends MedusaService({
         if (!token) {
             return this.handleApiError({ message: 'Authentication failed' }, 'createShipment')
         }
-        
+
         if (!order?.items || !fulfillment?.items) {
             return this.handleApiError({ message: 'Invalid order or fulfillment data' }, 'createShipment')
         }
-        
+
         const normalizedWarehouseId =
             typeof warehouse === "string" && warehouse.trim()
                 ? warehouse.trim()
@@ -948,8 +1097,8 @@ class SkydropxProService extends MedusaService({
         // Filter items by warehouse and fulfillment
         const warehouseItems = order.items.filter(item => {
             const itemWarehouse = this.getAlmacenIdFromItem(item) || 'default'
-            return itemWarehouse === normalizedWarehouseId && 
-                   fulfillment.items.some(fItem => fItem.line_item_id === item.id)
+            return itemWarehouse === normalizedWarehouseId &&
+                fulfillment.items.some(fItem => fItem.line_item_id === item.id)
         })
 
         if (warehouseItems.length === 0) {
@@ -957,19 +1106,19 @@ class SkydropxProService extends MedusaService({
         }
 
         // Calculate declared value
-        const declaredValue = warehouseItems.reduce((sum, item) => 
+        const declaredValue = warehouseItems.reduce((sum, item) =>
             sum + (item.unit_price * item.quantity), 0)
 
         const origin = await this.getOriginAddress(normalizedWarehouseId)
         const destination = this.getDestinationAddress(order, zipDetails)
-        
+
         if (!destination) {
             return this.handleApiError({ message: 'Invalid destination address' }, 'createShipment')
         }
-        
+
         // Log address information for debugging
         this.logger_.info(`[SkydropxProService] Creating shipment for warehouse ${normalizedWarehouseId} with origin: ${origin.name} (${origin.postal_code}) and destination: ${destination.name} (${destination.postal_code})`)
-        
+
         let resolvedRate: SkydropxCalculatedRate | undefined = selectedRate
 
         if (!resolvedRate) {
@@ -1011,10 +1160,10 @@ class SkydropxProService extends MedusaService({
                 }]
             }
         }
-        
+
         try {
             const response = await axios.post(this.options_.apiUrl + "/shipments", requestData, {
-                headers: { 
+                headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
                 }
@@ -1043,11 +1192,13 @@ class SkydropxProService extends MedusaService({
         } catch (error) {
             return this.handleApiError(error, 'createShipment')
         }
-    } 
-    
+    }
+
     /**
-     * Get shipments by order id
-     * Updated to match new API structure
+     * Lists shipments with pagination.
+     * 
+     * @param page - The page number to retrieve.
+     * @returns List of shipments.
      */
     async getShipments(page: number) {
         const token = await this.authenticate()
@@ -1057,7 +1208,7 @@ class SkydropxProService extends MedusaService({
 
         try {
             const response = await axios.get(this.options_.apiUrl + "/shipments?page=" + page, {
-                headers: { 
+                headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
                 }
@@ -1071,10 +1222,12 @@ class SkydropxProService extends MedusaService({
             return this.handleApiError(error, 'getShipments')
         }
     }
-    
+
     /**
-     * Get pickup coverage
-     * Updated to match new API structure
+     * Checks if a shipment is eligible for pickup.
+     * 
+     * @param shipment_id - The ID of the shipment to check.
+     * @returns Coverage information.
      */
     async getPickupsCoverage(shipment_id: string) {
         const token = await this.authenticate()
@@ -1084,7 +1237,7 @@ class SkydropxProService extends MedusaService({
 
         try {
             const response = await axios.get(this.options_.apiUrl + "/pickups/coverage?shipment_id=" + shipment_id, {
-                headers: { 
+                headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
                 }
@@ -1094,10 +1247,13 @@ class SkydropxProService extends MedusaService({
             return this.handleApiError(error, 'getPickupsCoverage')
         }
     }
-    
+
     /**
-     * Reschedule pickup
-     * Updated to match new API structure
+     * Reschedules a pickup for a new date/time.
+     * 
+     * @param id - The pickup ID.
+     * @param data - The rescheduling data.
+     * @returns The updated pickup information.
      */
     async reschedulePickup(id: string, data: any) {
         const token = await this.authenticate()
@@ -1110,11 +1266,11 @@ class SkydropxProService extends MedusaService({
                 pickup: data
             }
             const response = await axios.post(this.options_.apiUrl + "/pickups/" + id + "/reschedule", requestData, {
-                headers: { 
+                headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
                 }
-            })  
+            })
             return response.data
         } catch (error) {
             return this.handleApiError(error, 'reschedulePickup')
@@ -1122,8 +1278,10 @@ class SkydropxProService extends MedusaService({
     }
 
     /**
-     * Get pickups
-     * Updated to match new API structure
+     * Lists pickups with pagination.
+     * 
+     * @param page - The page number to retrieve.
+     * @returns List of pickups.
      */
     async getPickups(page: number) {
         const token = await this.authenticate()
@@ -1133,7 +1291,7 @@ class SkydropxProService extends MedusaService({
 
         try {
             const response = await axios.get(this.options_.apiUrl + "/pickups?page=" + page, {
-                headers: { 
+                headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
                 }
@@ -1145,8 +1303,10 @@ class SkydropxProService extends MedusaService({
     }
 
     /**
-     * Get pickup by id
-     * Updated to match new API structure
+     * Retrieves a pickup by its ID.
+     * 
+     * @param id - The pickup ID.
+     * @returns The pickup details.
      */
     async getPickup(id: string) {
         const token = await this.authenticate()
@@ -1156,7 +1316,7 @@ class SkydropxProService extends MedusaService({
 
         try {
             const response = await axios.get(this.options_.apiUrl + "/pickups/" + id, {
-                headers: { 
+                headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
                 }
@@ -1166,10 +1326,13 @@ class SkydropxProService extends MedusaService({
             return this.handleApiError(error, 'getPickup')
         }
     }
-    
+
     /**
-     * Create pickup
-     * Updated to match new API structure
+     * Schedules a new pickup.
+     * Polls until the pickup is successfully scheduled.
+     * 
+     * @param data - The pickup creation data.
+     * @returns The created pickup object.
      */
     async createPickup(data: any) {
         const token = await this.authenticate()
@@ -1179,7 +1342,7 @@ class SkydropxProService extends MedusaService({
 
         try {
             const response = await axios.post(this.options_.apiUrl + "/pickups", data, {
-                headers: { 
+                headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
                 }
@@ -1205,10 +1368,12 @@ class SkydropxProService extends MedusaService({
             return this.handleApiError(error, 'createPickup')
         }
     }
-    
+
     /**
-     * Get orders
-     * New endpoint from updated API
+     * Lists orders from Skydropx (Platform specific).
+     * 
+     * @param page - (Optional) Page number.
+     * @returns List of orders.
      */
     async getOrders(page?: number) {
         const token = await this.authenticate()
@@ -1219,7 +1384,7 @@ class SkydropxProService extends MedusaService({
         try {
             const url = page ? `${this.options_.apiUrl}/orders?page=${page}` : `${this.options_.apiUrl}/orders`
             const response = await axios.get(url, {
-                headers: { 
+                headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
                 }
@@ -1231,8 +1396,10 @@ class SkydropxProService extends MedusaService({
     }
 
     /**
-     * Get order by id
-     * New endpoint from updated API
+     * Retrieves a Skydropx order by ID.
+     * 
+     * @param id - The order ID.
+     * @returns The order details.
      */
     async getOrderById(id: string) {
         const token = await this.authenticate()
@@ -1242,7 +1409,7 @@ class SkydropxProService extends MedusaService({
 
         try {
             const response = await axios.get(this.options_.apiUrl + "/orders/" + id, {
-                headers: { 
+                headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
                 }
@@ -1254,8 +1421,10 @@ class SkydropxProService extends MedusaService({
     }
 
     /**
-     * Create order
-     * New endpoint from updated API
+     * Creates a new order in Skydropx platform.
+     * 
+     * @param data - The order data.
+     * @returns The created order.
      */
     async createOrder(data: any) {
         const token = await this.authenticate()
@@ -1265,7 +1434,7 @@ class SkydropxProService extends MedusaService({
 
         try {
             const response = await axios.post(this.options_.apiUrl + "/orders", data, {
-                headers: { 
+                headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
                 }
@@ -1277,8 +1446,11 @@ class SkydropxProService extends MedusaService({
     }
 
     /**
-     * Update order
-     * New endpoint from updated API
+     * Updates an existing order in Skydropx.
+     * 
+     * @param id - The order ID.
+     * @param data - The data to update.
+     * @returns The updated order.
      */
     async updateOrder(id: string, data: any) {
         const token = await this.authenticate()
@@ -1288,7 +1460,7 @@ class SkydropxProService extends MedusaService({
 
         try {
             const response = await axios.patch(this.options_.apiUrl + "/orders/" + id, data, {
-                headers: { 
+                headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
                 }
@@ -1300,8 +1472,11 @@ class SkydropxProService extends MedusaService({
     }
 
     /**
-     * Get products
-     * New endpoint from updated API
+     * Lists products from Skydropx.
+     * 
+     * @param page - (Optional) Page number.
+     * @param filters - (Optional) Filters like destination country.
+     * @returns List of products.
      */
     async getProducts(page?: number, filters?: any) {
         const token = await this.authenticate()
@@ -1314,13 +1489,13 @@ class SkydropxProService extends MedusaService({
             const params = new URLSearchParams()
             if (page) params.append('page', page.toString())
             if (filters?.destination_country_code) params.append('filters[destination_country_code]', filters.destination_country_code)
-            
+
             if (params.toString()) {
                 url += '?' + params.toString()
             }
-            
+
             const response = await axios.get(url, {
-                headers: { 
+                headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
                 }
@@ -1332,8 +1507,11 @@ class SkydropxProService extends MedusaService({
     }
 
     /**
-     * Cancel shipment
-     * New endpoint from updated API
+     * Cancels a shipment.
+     * 
+     * @param shipment_id - The ID of the shipment to cancel.
+     * @param reason - The reason for cancellation.
+     * @returns The cancellation response.
      */
     async cancelShipment(shipment_id: string, reason: string) {
         const token = await this.authenticate()
@@ -1346,7 +1524,7 @@ class SkydropxProService extends MedusaService({
                 reason: reason,
                 shipment_id: shipment_id
             }, {
-                headers: { 
+                headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
                 }
@@ -1358,8 +1536,11 @@ class SkydropxProService extends MedusaService({
     }
 
     /**
-     * Protect shipment
-     * New endpoint from updated API
+     * Adds protection coverage to a shipment.
+     * 
+     * @param shipment_id - The shipment ID.
+     * @param declared_value - The value to declare for protection.
+     * @returns The protection response.
      */
     async protectShipment(shipment_id: string, declared_value: number) {
         const token = await this.authenticate()
@@ -1374,7 +1555,7 @@ class SkydropxProService extends MedusaService({
                     shipment_id: shipment_id
                 }
             }, {
-                headers: { 
+                headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
                 }
@@ -1386,8 +1567,11 @@ class SkydropxProService extends MedusaService({
     }
 
     /**
-     * Track shipment
-     * New endpoint from updated API
+     * Tracks a shipment by its tracking number.
+     * 
+     * @param tracking_number - The tracking number.
+     * @param carrier_name - The carrier name.
+     * @returns Tracking information.
      */
     async trackShipment(tracking_number: string, carrier_name: string) {
         const token = await this.authenticate()
@@ -1401,7 +1585,7 @@ class SkydropxProService extends MedusaService({
                     tracking_number: tracking_number,
                     carrier_name: carrier_name
                 },
-                headers: { 
+                headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
                 }
@@ -1413,8 +1597,10 @@ class SkydropxProService extends MedusaService({
     }
 
     /**
-     * Update printing format
-     * New endpoint from updated API
+     * Updates the default printing format (Standard or Thermal).
+     * 
+     * @param format - The desired format ('standard' or 'thermal').
+     * @returns The update response.
      */
     async updatePrintingFormat(format: 'standard' | 'thermal') {
         const token = await this.authenticate()
@@ -1426,7 +1612,7 @@ class SkydropxProService extends MedusaService({
             const response = await axios.patch(this.options_.apiUrl + "/settings/printing_formats", {
                 printing_format: format
             }, {
-                headers: { 
+                headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
                 }
