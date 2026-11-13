@@ -135,10 +135,234 @@ const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey, {
     }
 })
 
+const MX_STATE_NAMES_BY_CODE = {
+    AGS: "Aguascalientes",
+    BC: "Baja California",
+    BCN: "Baja California",
+    BCS: "Baja California Sur",
+    CAMP: "Campeche",
+    CAM: "Campeche",
+    CHIS: "Chiapas",
+    CHP: "Chiapas",
+    CHIH: "Chihuahua",
+    CHH: "Chihuahua",
+    CDMX: "Ciudad de Mexico",
+    CMX: "Ciudad de Mexico",
+    DF: "Ciudad de Mexico",
+    COAH: "Coahuila",
+    COA: "Coahuila",
+    COL: "Colima",
+    DGO: "Durango",
+    DUR: "Durango",
+    GTO: "Guanajuato",
+    GRO: "Guerrero",
+    HGO: "Hidalgo",
+    JAL: "Jalisco",
+    MEX: "Estado de Mexico",
+    MICH: "Michoacan",
+    MIC: "Michoacan",
+    MOR: "Morelos",
+    NAY: "Nayarit",
+    NL: "Nuevo Leon",
+    NLE: "Nuevo Leon",
+    OAX: "Oaxaca",
+    PUE: "Puebla",
+    QRO: "Queretaro",
+    QUE: "Queretaro",
+    QROO: "Quintana Roo",
+    ROO: "Quintana Roo",
+    SLP: "San Luis Potosi",
+    SIN: "Sinaloa",
+    SON: "Sonora",
+    TAB: "Tabasco",
+    TAMPS: "Tamaulipas",
+    TAM: "Tamaulipas",
+    TLAX: "Tlaxcala",
+    TLA: "Tlaxcala",
+    VER: "Veracruz",
+    YUC: "Yucatan",
+    ZAC: "Zacatecas"
+};
+const MX_STATE_RANGES_BY_POSTAL_CODE: [number, number, string][] = [
+    [1000, 16999, "Ciudad de Mexico"],
+    [20000, 20999, "Aguascalientes"],
+    [21000, 22999, "Baja California"],
+    [23000, 23999, "Baja California Sur"],
+    [24000, 24999, "Campeche"],
+    [25000, 27999, "Coahuila"],
+    [28000, 28999, "Colima"],
+    [29000, 30999, "Chiapas"],
+    [31000, 33999, "Chihuahua"],
+    [34000, 35999, "Durango"],
+    [36000, 38999, "Guanajuato"],
+    [39000, 41999, "Guerrero"],
+    [42000, 43999, "Hidalgo"],
+    [44000, 49999, "Jalisco"],
+    [50000, 57999, "Estado de Mexico"],
+    [58000, 61999, "Michoacan"],
+    [62000, 62999, "Morelos"],
+    [63000, 63999, "Nayarit"],
+    [64000, 67999, "Nuevo Leon"],
+    [68000, 71999, "Oaxaca"],
+    [72000, 75999, "Puebla"],
+    [76000, 76999, "Queretaro"],
+    [77000, 77999, "Quintana Roo"],
+    [78000, 79999, "San Luis Potosi"],
+    [80000, 82999, "Sinaloa"],
+    [83000, 85999, "Sonora"],
+    [86000, 86999, "Tabasco"],
+    [87000, 89999, "Tamaulipas"],
+    [90000, 90999, "Tlaxcala"],
+    [91000, 96999, "Veracruz"],
+    [97000, 97999, "Yucatan"],
+    [98000, 99999, "Zacatecas"]
+];
+
 class SkydropxProService extends MedusaService({
     Parcel,
     ParcelService
 }) {
+protected accessToken_?: { value: string; expiresAt: number }
+protected authentication_?: Promise<string | null>
+/** V2 pickup endpoints are independent of the V1 quotation/shipment base. */
+private pickupV2Url(path: string): string {
+  const base = new URL(this.options_.apiUrl)
+  const prefix = base.pathname.replace(/\/api\/v[12]\/?$/, "").replace(/\/$/, "")
+  const [endpoint, query = ""] = path.split("?")
+  base.pathname = prefix + "/api/v2/pickups" + endpoint
+  base.search = query
+  base.hash = ""
+  return base.href
+}
+
+private async pickupV2(method: "GET" | "POST", path: string, body?: any): Promise<any> {
+  const token = await this.authenticate()
+  if (!token) throw new Error("No se pudo autenticar con Skydropx.")
+  try {
+    return (await axios.request({ method, url: this.pickupV2Url(path), data: body, timeout: 15000,
+      headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" } })).data
+  } catch (error: any) {
+    if (error.response?.status === 401) this.accessToken_ = undefined
+    throw new Error("Skydropx no confirmó la operación de recolección. Revisa el estado antes de repetirla.")
+  }
+}
+
+async getEligiblePickupShipments(page = 1) {
+  if (!Number.isSafeInteger(page) || page < 1) throw new Error("Invalid eligibility page")
+  return this.pickupV2("GET", "/eligible_shipments?page=" + page + "&per_page=20")
+}
+
+async getPickupV2(pickupId: string) {
+  return this.pickupV2("GET", "/" + encodeURIComponent(pickupId))
+}
+
+async createPickupV2(body: any, onCreated?: (response: any) => Promise<void>) {
+  const response = await this.pickupV2("POST", "", body)
+  if (onCreated) await onCreated(response)
+  return response
+}
+
+async reschedulePickupV2(pickupId: string, body: any, onCreated?: (response: any) => Promise<void>) {
+  const response = await this.pickupV2("POST", "/" + encodeURIComponent(pickupId) + "/reschedule", body)
+  if (onCreated) await onCreated(response)
+  return response
+}
+
+
+normalizeText(value) {
+        return String(value ?? "").trim();
+    }
+
+normalizeEmail(value) {
+        return this.normalizeText(value).toLowerCase();
+    }
+
+applyOriginEmail(address, email) {
+        const normalizedEmail = this.normalizeEmail(email);
+        if (!normalizedEmail) {
+            return address;
+        }
+        return {
+            ...address,
+            email: normalizedEmail
+        };
+    }
+
+async getWarehouseStoreEmail(almacenId) {
+        const normalizedAlmacenId = String(almacenId ?? "").trim();
+        if (!normalizedAlmacenId || normalizedAlmacenId === "default") {
+            return "";
+        }
+        try {
+            const { data, error } = await supabase
+                .from("almacenes")
+                .select("store_email")
+                .eq("id_unico", normalizedAlmacenId)
+                .maybeSingle();
+            if (error) {
+                this.logger_.warn(`[SkydropxProService] Failed to fetch store_email for almacen ${normalizedAlmacenId}: ${error.message}`);
+                return "";
+            }
+            const storeEmail = this.normalizeEmail(data?.store_email);
+            if (storeEmail) {
+                this.logger_.info(`[SkydropxProService] Using almacenes.store_email for origin address of almacen ${normalizedAlmacenId}`);
+            }
+            return storeEmail;
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : JSON.stringify(error);
+            this.logger_.warn(`[SkydropxProService] Error fetching store_email for almacen ${normalizedAlmacenId}: ${errorMessage}`);
+            return "";
+        }
+    }
+
+normalizeMxStateKey(value) {
+        return this.normalizeText(value)
+            .toUpperCase()
+            .replace(/^MX[-_\s]*/i, "")
+            .replace(/[^A-Z]/g, "");
+    }
+
+resolveMxStateName(value, postalCode, city) {
+        const rawValue = this.normalizeText(value);
+        const stateKey = this.normalizeMxStateKey(rawValue);
+        const stateFromCode = MX_STATE_NAMES_BY_CODE[stateKey];
+        if (stateFromCode) {
+            return stateFromCode;
+        }
+        const stateFromPostalCode = this.resolveMxStateNameFromPostalCode(postalCode);
+        const cityKey = this.normalizeMxStateKey(city);
+        if (stateFromPostalCode && (!rawValue || stateKey === cityKey)) {
+            return stateFromPostalCode;
+        }
+        return rawValue || stateFromPostalCode || "";
+    }
+
+resolveMxStateNameFromPostalCode(postalCode) {
+        const normalizedPostalCode = Number(this.normalizeText(postalCode).replace(/\D/g, ""));
+        if (!Number.isFinite(normalizedPostalCode)) {
+            return "";
+        }
+        const match = MX_STATE_RANGES_BY_POSTAL_CODE.find(([start, end]) => (normalizedPostalCode >= start && normalizedPostalCode <= end));
+        return match?.[2] || "";
+    }
+
+getMissingAddressFields(address) {
+        const requiredFields = [
+            ["postal_code", address?.postal_code],
+            ["country_code", address?.country_code],
+            ["area_level1", address?.area_level1],
+            ["area_level2", address?.area_level2],
+            ["street1", address?.street1],
+            ["name", address?.name],
+            ["phone", address?.phone],
+            ["email", address?.email]
+        ];
+        return requiredFields
+            .filter(([, value]) => typeof value !== "string" || !value.trim())
+            .map(([field]) => field);
+    }
+
     protected readonly options_: SkydropxProServiceOptions
     protected readonly logger_: Logger
     protected stockLocationModuleService_?: StockLocationModuleService
@@ -371,42 +595,29 @@ class SkydropxProService extends MedusaService({
      * 
      * @returns The access token string or null if authentication fails.
      */
-    async authenticate() {
-        if (!this.validateConfig()) {
-            return null
-        }
+    async authenticate(): Promise<string | null> {
+  if (!this.validateConfig()) return null
+  if (this.accessToken_ && this.accessToken_.expiresAt > Date.now() + 60000) return this.accessToken_.value
+  if (this.authentication_) return this.authentication_
+  this.authentication_ = (async () => {
+    try {
+      const response = await axios.post(this.options_.apiUrl + "/oauth/token", new URLSearchParams({
+        grant_type: "client_credentials", client_id: this.options_.apiKey, client_secret: this.options_.apiSecret,
+      }).toString(), { timeout: 15000, headers: { "Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json" } })
+      const token = response.data?.access_token
+      if (typeof token !== "string" || !token) throw new Error("No OAuth access token returned")
+      const seconds = Number(response.data.expires_in)
+      this.accessToken_ = { value: token, expiresAt: Date.now() + (Number.isFinite(seconds) && seconds > 60 ? seconds : 120) * 1000 }
+      return token
+    } catch {
+      this.logger_.error("[SkydropxProService] OAuth authentication failed")
+      this.accessToken_ = undefined
+      return null
+    } finally { this.authentication_ = undefined }
+  })()
+  return this.authentication_
+}
 
-        const body = new URLSearchParams({
-            grant_type: 'client_credentials',
-            client_id: this.options_.apiKey,
-            client_secret: this.options_.apiSecret
-        })
-
-        const config = {
-            method: 'post',
-            maxBodyLength: Infinity,
-            url: this.options_.apiUrl + "/oauth/token",
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Accept': 'application/json'
-            },
-            data: body.toString()
-        }
-
-        try {
-            const response = await axios.request(config)
-            const token = response.data?.access_token
-
-            if (typeof token !== 'string' || token.length === 0) {
-                this.logger_.error('[SkydropxProService.authenticate] Missing access_token in response')
-                return null
-            }
-
-            return token
-        } catch (error) {
-            return this.handleApiError(error, 'authenticate')
-        }
-    }
 
     /**
      * Creates a new quotation request in Skydropx.
@@ -424,6 +635,7 @@ class SkydropxProService extends MedusaService({
 
         try {
             const response = await axios.post(this.options_.apiUrl + "/quotations", data, {
+                timeout: 15000,
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
@@ -458,6 +670,7 @@ class SkydropxProService extends MedusaService({
 
         try {
             const response = await axios.get(this.options_.apiUrl + "/quotations/" + id, {
+                timeout: 15000,
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
@@ -643,85 +856,77 @@ class SkydropxProService extends MedusaService({
      * @param almacenId - The warehouse identifier.
      * @returns The resolved SkydropxOriginAddress.
      */
-    async getOriginAddress(almacenId?: string): Promise<SkydropxOriginAddress> {
-        const defaultAddress = this.buildDefaultOriginAddress()
-
-        const normalizedAlmacenId = typeof almacenId === "string" ? almacenId.trim() : undefined
+    async getOriginAddress(almacenId) {
+        const defaultAddress = this.buildDefaultOriginAddress();
+        const normalizedAlmacenId = typeof almacenId === "string" ? almacenId.trim() : undefined;
         if (!normalizedAlmacenId || normalizedAlmacenId === "") {
-            this.logger_.debug('[SkydropxProService] Using default origin address because no almacen identifier was provided')
-            return defaultAddress
+            this.logger_.debug('[SkydropxProService] Using default origin address because no almacen identifier was provided');
+            return defaultAddress;
         }
-
         if (normalizedAlmacenId === "default") {
-            this.logger_.debug('[SkydropxProService] Using default origin address for warehouse "default"')
-            return defaultAddress
+            this.logger_.debug('[SkydropxProService] Using default origin address for warehouse "default"');
+            return defaultAddress;
         }
-
-        const moduleService = this.stockLocationModuleService_
+        const warehouseStoreEmail = await this.getWarehouseStoreEmail(normalizedAlmacenId);
+        const fallbackAddress = this.applyOriginEmail(defaultAddress, warehouseStoreEmail);
+        const moduleService = this.stockLocationModuleService_;
         if (!moduleService?.listStockLocations) {
-            this.logger_.warn(`[SkydropxProService] Stock location module service unavailable when resolving almacen ${normalizedAlmacenId}`)
-            return defaultAddress
+            this.logger_.warn(`[SkydropxProService] Stock location module service unavailable when resolving almacen ${normalizedAlmacenId}`);
+            return fallbackAddress;
         }
-
-        const selectors: Array<{ selector: Record<string, any>; debugLabel: string }> = [
+        const selectors = [
             { selector: { metadata: { almacen_id_unico: normalizedAlmacenId } }, debugLabel: "metadata.almacen_id_unico" },
             { selector: { metadata: { almacen_id: normalizedAlmacenId } }, debugLabel: "metadata.almacen_id" },
             { selector: { metadata: { almacen: normalizedAlmacenId } }, debugLabel: "metadata.almacen" },
             { selector: { id: [normalizedAlmacenId] }, debugLabel: "id" },
             { selector: { q: normalizedAlmacenId }, debugLabel: "search" },
-        ]
-
+        ];
         for (const { selector, debugLabel } of selectors) {
             try {
                 const locations = await moduleService.listStockLocations(selector, {
                     relations: ["address"],
                     take: 5
-                })
-
+                });
                 if (!Array.isArray(locations) || !locations.length) {
-                    continue
+                    continue;
                 }
-
-                const matchedLocation = locations.find((location: any) => {
-                    const locationMetadata = location?.metadata ?? {}
-                    const locationName = typeof location?.name === "string" ? location.name : ""
+                const matchedLocation = locations.find((location) => {
+                    const locationMetadata = location?.metadata ?? {};
+                    const locationName = typeof location?.name === "string" ? location.name : "";
                     const nameSegments = locationName
                         .split("||")
-                        .map((segment: string) => segment.trim())
-                        .filter(Boolean)
-                    const normalizedTarget = normalizedAlmacenId.toLowerCase()
-                    const matchesNameSegment = nameSegments.some(
-                        (segment: string) => segment.toLowerCase() === normalizedTarget
-                    )
-                    const matchesExactName = locationName.trim().toLowerCase() === normalizedTarget
+                        .map((segment) => segment.trim())
+                        .filter(Boolean);
+                    const normalizedTarget = normalizedAlmacenId.toLowerCase();
+                    const matchesNameSegment = nameSegments.some((segment) => segment.toLowerCase() === normalizedTarget);
+                    const matchesExactName = locationName.trim().toLowerCase() === normalizedTarget;
                     const matchesMetadata = [
                         locationMetadata?.almacen_id_unico,
                         locationMetadata?.almacen_id,
                         locationMetadata?.almacen,
                     ]
                         .map((value) => (typeof value === "string" ? value.trim().toLowerCase() : undefined))
-                        .some((value) => value === normalizedTarget)
-
-                    return (
-                        (typeof location?.id === "string" && location.id.trim() === normalizedAlmacenId) ||
+                        .some((value) => value === normalizedTarget);
+                    return ((typeof location?.id === "string" && location.id.trim() === normalizedAlmacenId) ||
                         matchesExactName ||
                         matchesNameSegment ||
-                        matchesMetadata
-                    )
-                }) ?? locations[0]
-
+                        matchesMetadata);
+                }) ?? locations[0];
                 if (matchedLocation) {
-                    this.logger_.info(`[SkydropxProService] Resolved almacen ${normalizedAlmacenId} to stock location ${matchedLocation.id ?? matchedLocation.name ?? "unknown"} via ${debugLabel}`)
-                    return this.mapStockLocationToOriginAddress(matchedLocation, defaultAddress)
+                    this.logger_.info(`[SkydropxProService] Resolved almacen ${normalizedAlmacenId} to stock location ${matchedLocation.id ?? matchedLocation.name ?? "unknown"} via ${debugLabel}`);
+                    return this.applyOriginEmail(
+                        this.mapStockLocationToOriginAddress(matchedLocation, fallbackAddress),
+                        warehouseStoreEmail
+                    );
                 }
-            } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : JSON.stringify(error)
-                this.logger_.warn(`[SkydropxProService] Failed to query stock locations by ${debugLabel} for almacen ${normalizedAlmacenId}: ${errorMessage}`)
+            }
+            catch (error) {
+                const errorMessage = error instanceof Error ? error.message : JSON.stringify(error);
+                this.logger_.warn(`[SkydropxProService] Failed to query stock locations by ${debugLabel} for almacen ${normalizedAlmacenId}: ${errorMessage}`);
             }
         }
-
-        this.logger_.warn(`[SkydropxProService] No stock location found for almacen ${normalizedAlmacenId}, falling back to default origin address`)
-        return defaultAddress
+        this.logger_.warn(`[SkydropxProService] No stock location found for almacen ${normalizedAlmacenId}, falling back to default origin address`);
+        return fallbackAddress;
     }
 
     /**
@@ -731,37 +936,38 @@ class SkydropxProService extends MedusaService({
      * @param zipDetails - (Optional) Additional zip code details.
      * @returns The formatted destination address or null if invalid.
      */
-    getDestinationAddress(cart: any, zipDetails: any) {
+    getDestinationAddress(cart, zipDetails) {
         if (!cart?.shipping_address) {
-            this.logger_.warn('[SkydropxProService] No shipping address provided')
-            return null
+            this.logger_.warn('[SkydropxProService] No shipping address provided');
+            return null;
         }
-
-        const address = cart.shipping_address
-        const postalCode = String(zipDetails?.replace(/\D/g, '') || '00000').trim()
+        const address = cart.shipping_address;
+        const postalCode = String(zipDetails?.replace(/\D/g, '') || '00000').trim();
         if (!postalCode || postalCode === '') {
-            this.logger_.warn('[SkydropxProService] Empty postal code in destination address, using default')
+            this.logger_.warn('[SkydropxProService] Empty postal code in destination address, using default');
         }
-
-        const customerName = `${address.first_name || 'N/A'} ${address.last_name || 'N/A'}`.trim()
+        const customerName = `${address.first_name || 'N/A'} ${address.last_name || 'N/A'}`.trim();
         if (customerName === 'N/A N/A' || customerName === '') {
-            this.logger_.warn('[SkydropxProService] Empty customer name in destination address, using default')
+            this.logger_.warn('[SkydropxProService] Empty customer name in destination address, using default');
         }
-
+        const cityName = this.normalizeText(address.city);
+        const rawProvince = address.province || address.state;
+        const stateName = this.resolveMxStateName(rawProvince, postalCode, cityName);
+        this.logger_.info(`[SkydropxProService] Destination address normalized: province=${rawProvince || "N/A"} -> area_level1=${stateName || "N/A"}, postal_code=${postalCode || "N/A"}, city=${cityName || "N/A"} -> area_level2=${cityName || "N/A"}`);
         return {
             country_code: "MX",
             postal_code: postalCode || '00000',
-            area_level1: address.province || 'N/A',
-            area_level2: address.city || 'N/A',
+            area_level1: stateName || 'N/A',
+            area_level2: cityName || 'N/A',
             area_level3: address.district || 'N/A',
             street1: address.address_1 || 'N/A',
             internal_number: address.address_2 || '1',
-            reference: (address.address_1) || 'N/A',
+            reference: (address.address_1 + ' ' + address.address_2) || 'N/A',
             name: customerName || 'Customer Name',
             company: address.company || '',
             phone: address.phone || '0',
             email: cart.email || 'n/a@example.com'
-        }
+        };
     }
 
     /**
@@ -1032,6 +1238,7 @@ class SkydropxProService extends MedusaService({
 
         try {
             const response = await axios.get(this.options_.apiUrl + "/shipments/" + id, {
+                timeout: 15000,
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
@@ -1078,7 +1285,8 @@ class SkydropxProService extends MedusaService({
         zipDetails: any,
         fulfillment: any,
         warehouse: string,
-        selectedRate?: SkydropxCalculatedRate
+        selectedRate?: SkydropxCalculatedRate,
+        onCreated?: (response: any) => Promise<void>
     ) {
         const token = await this.authenticate()
         if (!token) {
@@ -1163,6 +1371,7 @@ class SkydropxProService extends MedusaService({
 
         try {
             const response = await axios.post(this.options_.apiUrl + "/shipments", requestData, {
+                timeout: 15000,
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
@@ -1173,6 +1382,10 @@ class SkydropxProService extends MedusaService({
             const INITIAL_DELAY = 1000; // 1 second
             let attempts = 0;
             let shipment = response.data;
+            if (onCreated) {
+                await onCreated(shipment);
+                return { success: shipment?.data?.attributes?.workflow_status === "success", shipment, rate: resolvedRate };
+            }
 
             while (shipment?.data?.attributes?.workflow_status === 'in_progress' && attempts < MAX_ATTEMPTS) {
                 await new Promise(resolve => setTimeout(resolve, INITIAL_DELAY * Math.pow(2, attempts)));
@@ -1208,6 +1421,7 @@ class SkydropxProService extends MedusaService({
 
         try {
             const response = await axios.get(this.options_.apiUrl + "/shipments?page=" + page, {
+                timeout: 15000,
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
@@ -1237,6 +1451,7 @@ class SkydropxProService extends MedusaService({
 
         try {
             const response = await axios.get(this.options_.apiUrl + "/pickups/coverage?shipment_id=" + shipment_id, {
+                timeout: 15000,
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
@@ -1266,6 +1481,7 @@ class SkydropxProService extends MedusaService({
                 pickup: data
             }
             const response = await axios.post(this.options_.apiUrl + "/pickups/" + id + "/reschedule", requestData, {
+                timeout: 15000,
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
@@ -1291,6 +1507,7 @@ class SkydropxProService extends MedusaService({
 
         try {
             const response = await axios.get(this.options_.apiUrl + "/pickups?page=" + page, {
+                timeout: 15000,
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
@@ -1316,6 +1533,7 @@ class SkydropxProService extends MedusaService({
 
         try {
             const response = await axios.get(this.options_.apiUrl + "/pickups/" + id, {
+                timeout: 15000,
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
@@ -1342,6 +1560,7 @@ class SkydropxProService extends MedusaService({
 
         try {
             const response = await axios.post(this.options_.apiUrl + "/pickups", data, {
+                timeout: 15000,
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
@@ -1384,6 +1603,7 @@ class SkydropxProService extends MedusaService({
         try {
             const url = page ? `${this.options_.apiUrl}/orders?page=${page}` : `${this.options_.apiUrl}/orders`
             const response = await axios.get(url, {
+                timeout: 15000,
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
@@ -1409,6 +1629,7 @@ class SkydropxProService extends MedusaService({
 
         try {
             const response = await axios.get(this.options_.apiUrl + "/orders/" + id, {
+                timeout: 15000,
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
@@ -1434,6 +1655,7 @@ class SkydropxProService extends MedusaService({
 
         try {
             const response = await axios.post(this.options_.apiUrl + "/orders", data, {
+                timeout: 15000,
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
@@ -1460,6 +1682,7 @@ class SkydropxProService extends MedusaService({
 
         try {
             const response = await axios.patch(this.options_.apiUrl + "/orders/" + id, data, {
+                timeout: 15000,
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
@@ -1495,6 +1718,7 @@ class SkydropxProService extends MedusaService({
             }
 
             const response = await axios.get(url, {
+                timeout: 15000,
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
@@ -1524,6 +1748,7 @@ class SkydropxProService extends MedusaService({
                 reason: reason,
                 shipment_id: shipment_id
             }, {
+                timeout: 15000,
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
@@ -1555,6 +1780,7 @@ class SkydropxProService extends MedusaService({
                     shipment_id: shipment_id
                 }
             }, {
+                timeout: 15000,
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
@@ -1585,6 +1811,7 @@ class SkydropxProService extends MedusaService({
                     tracking_number: tracking_number,
                     carrier_name: carrier_name
                 },
+                timeout: 15000,
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
@@ -1612,6 +1839,7 @@ class SkydropxProService extends MedusaService({
             const response = await axios.patch(this.options_.apiUrl + "/settings/printing_formats", {
                 printing_format: format
             }, {
+                timeout: 15000,
                 headers: {
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'

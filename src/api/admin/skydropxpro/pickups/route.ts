@@ -1,40 +1,27 @@
-import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { SKYDROPPX_MODULE } from "../../../../modules/skydropxpro"
-import SkydropxProService from "../../../../modules/skydropxpro/service"
 
-// GET /admin/skydropxpro/pickups
-export async function GET(
-  req: MedusaRequest,
-  res: MedusaResponse
-) {
-  const { page } = req.query as any
-  const skydropxProService: SkydropxProService = req.scope.resolve(SKYDROPPX_MODULE)
-  
-  try {
-    const result = await skydropxProService.getPickups(page ? parseInt(page) : 1)
-    res.status(200).json(result)
-  } catch (error) {
-    res.status(500).json({
-      error: "Error retrieving pickups",
-      details: error
-    })
-  }
+export async function GET(req: MedusaRequest, res: MedusaResponse) {
+  const service: any = req.scope.resolve(SKYDROPPX_MODULE)
+  try { const tracking:any=req.scope.resolve("skydropx_tracking",{allowUnregistered:true})
+  if(!tracking&&Object.keys(req.headers||{}).some(header=>header.toLowerCase()==="x-ballena-supabase-token"))throw Object.assign(new Error("La autorización de envíos no está disponible."),{statusCode:503})
+    if(tracking){const access=await tracking.authorizeRequest(req);return res.json(await tracking.pickups(20,(Math.max(1,Number(req.query.page)||1)-1)*20,access))}
+    return res.json(await service.getPickups(Number(req.query.page) || 1)) }
+  catch { return res.status(503).json({ error: "No se pudo consultar las recolecciones." }) }
 }
 
-// POST /admin/skydropxpro/pickups
-export async function POST(
-  req: MedusaRequest,
-  res: MedusaResponse
-) {
-  const skydropxProService: SkydropxProService = req.scope.resolve(SKYDROPPX_MODULE)
-  
+export async function POST(req: MedusaRequest, res: MedusaResponse) {
+  const service: any = req.scope.resolve(SKYDROPPX_MODULE)
   try {
-    const result = await skydropxProService.createPickup(req.body)
-    res.status(200).json(result)
-  } catch (error) {
-    res.status(500).json({
-      error: "Error creating pickup",
-      details: error
-    })
+    const tracking: any = req.scope.resolve("skydropx_tracking", { allowUnregistered: true })
+  if(!tracking&&Object.keys(req.headers||{}).some(header=>header.toLowerCase()==="x-ballena-supabase-token"))throw Object.assign(new Error("La autorización de envíos no está disponible."),{statusCode:503})
+    const access=tracking?await tracking.authorizeRequest(req):undefined
+    const result = tracking
+      ? await tracking.createPickup(req.scope, req.body, (body: any, record: any) => service.createPickupV2(body, record),access)
+      : await service.createPickup(req.body)
+    return res.json(result)
+  } catch (error: any) {
+    return res.status(error.statusCode || 503).json({ success: false,
+      error: error.statusCode ? error.message : "No se confirmó la recolección. Consulta el folio antes de repetir la solicitud." })
   }
-} 
+}
